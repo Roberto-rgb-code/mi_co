@@ -12,8 +12,8 @@ describe('AppController', () => {
     controller = module.get<AppController>(AppController);
   });
 
-  it('debe retornar mensaje de bienvenida', () => {
-    const result = controller.getHello();
+  it('debe retornar info de la API', () => {
+    const result = controller.getApiInfo();
     expect(result).toHaveProperty('message', 'Isuzu Cotizador API');
     expect(result).toHaveProperty('version');
   });
