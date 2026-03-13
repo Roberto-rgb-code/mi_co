@@ -29,6 +29,7 @@ export interface ModeloCatalog {
     exterior_carga?: { largo_cm?: number; ancho_cm?: number; alto_cm?: number };
     interior_carga_2?: { largo_cm?: number; ancho_cm?: number; alto_cm?: number };
   };
+  image?: string; // ruta /images/xxx.png si existe
   distancia_consumo?: {
     capacidad_tanque_litros?: number;
     rendimiento_promedio_km_litro?: number;

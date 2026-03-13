@@ -12,14 +12,15 @@ export function Catalogo() {
   const [selected, setSelected] = useState<ModeloCatalog | null>(null);
 
   useEffect(() => {
-    fetch('/catalog_data.json')
-      .then(res => res.json())
-      .then(data => {
+    Promise.all([fetch('/catalog_data.json').then(r => r.json()), fetch('/model_images.json').then(r => r.json()).catch(() => ({}))])
+      .then(([data, images]) => {
         const obj = data.modelos || {};
-        const list = Object.entries(obj).map(([key, val]) => ({
-          ...(val as ModeloCatalog),
-          modelo: (val as ModeloCatalog).modelo || key,
-        }));
+        const imageMap = images as Record<string, string>;
+        const list = Object.entries(obj).map(([key, val]) => {
+          const m = val as ModeloCatalog & { image?: string };
+          const modelo = m.modelo || key;
+          return { ...m, modelo, image: imageMap[modelo] };
+        });
         setModelos(list);
       })
       .catch(() => setModelos([]))

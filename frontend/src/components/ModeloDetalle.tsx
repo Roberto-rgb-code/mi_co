@@ -11,7 +11,7 @@ export function ModeloDetalle({ modelo, onClose }: Props) {
   const formatPrice = (n: number) =>
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(n);
 
-  const imageUrl = `https://placehold.co/600x380/f5f6f8/e5e7eb?text=${encodeURIComponent(modelo.modelo)}`;
+  const imageUrl = modelo.image || `https://placehold.co/600x380/f5f6f8/e5e7eb?text=${encodeURIComponent(modelo.modelo)}`;
 
   return (
     <div className="modelo-detalle-overlay" onClick={onClose}>

@@ -11,7 +11,7 @@ export function ModeloCard({ modelo, onClick }: Props) {
   const formatPrice = (n: number) =>
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(n);
 
-  const imageUrl = `https://placehold.co/400x260/f5f6f8/e5e7eb?text=${encodeURIComponent(modelo.modelo)}`;
+  const imageUrl = modelo.image || `https://placehold.co/400x260/f5f6f8/e5e7eb?text=${encodeURIComponent(modelo.modelo)}`;
 
   return (
     <article className="modelo-card" onClick={onClick}>
