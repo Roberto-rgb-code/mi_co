@@ -12,6 +12,18 @@ from pathlib import Path
 import openpyxl
 
 
+def _normalize_modelo_key(modelo: str) -> str:
+    """Normaliza clave para evitar duplicados Forward/forward, ELF/elf."""
+    if not modelo:
+        return modelo
+    s = str(modelo).strip()
+    if s.upper().startswith("FORWARD"):
+        return "FORWARD " + s[7:].strip()
+    if s.upper().startswith("ELF"):
+        return "ELF " + s[3:].strip()
+    return s
+
+
 def clean_value(v):
     """Convierte valores a tipo JSON-serializable."""
     if v is None:
@@ -47,6 +59,7 @@ def extract_datos1(wb, lineas):
         modelo = clean_value(row[0])
         if not modelo:
             continue
+        modelo = _normalize_modelo_key(modelo)
         precio_2025 = clean_value(row[3])
         precio_2026 = clean_value(row[4])
         lineas[modelo] = lineas.get(modelo) or {}
@@ -92,6 +105,7 @@ def extract_datos2(wb, lineas, linea="ELF"):
             continue
         if prefix == "FORWARD" and "FORWARD" not in str(modelo).upper():
             continue
+        modelo = _normalize_modelo_key(modelo)
         lineas[modelo] = lineas.get(modelo) or {}
         lineas[modelo]["linea"] = linea
         lineas[modelo]["modelo"] = modelo
@@ -130,6 +144,7 @@ def extract_cubicaje(wb, lineas):
         modelo = clean_value(row[1])
         if not modelo:
             continue
+        modelo = _normalize_modelo_key(modelo)
         lineas[modelo] = lineas.get(modelo) or {}
         cubicaje = {}
         # Exterior: col 2=Largo, 3=Ancho, 4=Alto
@@ -179,6 +194,7 @@ def extract_distancia_consumo(wb, lineas):
         modelo = clean_value(row[1])
         if not modelo:
             continue
+        modelo = _normalize_modelo_key(modelo)
         lineas[modelo] = lineas.get(modelo) or {}
         consumo = {
             "capacidad_tanque_litros": clean_value(row[2]),

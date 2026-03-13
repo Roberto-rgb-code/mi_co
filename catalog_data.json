@@ -727,7 +727,29 @@
     },
     "ELF 500M+": {
       "precio_2025": 1230300,
-      "precio_2026": 1360700
+      "precio_2026": 1360700,
+      "linea": "ELF",
+      "modelo": "ELF 500M+",
+      "ano_modelo": 2026,
+      "precio": 1306100,
+      "capacidad_carga": "5 T",
+      "largo_chasis": 6.685,
+      "alto_camion": 2.352,
+      "ancho_cabina": 2.04,
+      "largo_aplicacion": 6,
+      "alto_aplicacion": 2.2,
+      "ancho_aplicacion": 2.4,
+      "distancia_entre_ejes": 4.47,
+      "pvb": 7.257,
+      "motor": "4 cilindros 5,194 CC OHC / TURBO VGS + EGR + DPD + SCR",
+      "tecnologia": "EURO VI",
+      "garantia": "3 años o 100,000 kms",
+      "equipo": "BOLSA DE AIRE CONDUCTOR + CÁMARA DE REVERSA +AIRE ACONDICIONADO + ALARMA DE REVERSA + MANDOS AL VOLANTE+ CIERRE CENTRALIZADO VENTANAS ELÉCTRICAS + PUERTO USB (SÓLO ENERGÍA)",
+      "frenos": "VAC-DISCO/TAMBOR ABS+EBD+BOOST ASSIST",
+      "hp": "182 @ 2600",
+      "torque": "372 @ 1600",
+      "km_litro": "6 KM/LT",
+      "llantas": "225 / 70 R19.5 - 12 PR"
     },
     "ELF 600H": {
       "precio_2025": 1261700,
@@ -906,7 +928,29 @@
     },
     "ELF 600M+": {
       "precio_2025": 1289500,
-      "precio_2026": 1422400
+      "precio_2026": 1422400,
+      "linea": "ELF",
+      "modelo": "ELF 600M+",
+      "ano_modelo": 2026,
+      "precio": 1411400,
+      "capacidad_carga": "6 T",
+      "largo_chasis": 7.585,
+      "alto_camion": 2.356,
+      "ancho_cabina": 2.04,
+      "largo_aplicacion": 6.9,
+      "alto_aplicacion": 2.2,
+      "ancho_aplicacion": 2.4,
+      "distancia_entre_ejes": 4.47,
+      "pvb": 8.845,
+      "motor": "4 cilindros 5,194 CC OHC / TURBO VGS + EGR + DPD + SCR",
+      "tecnologia": "EURO VI",
+      "garantia": "3 años o 100,000 kms",
+      "equipo": "BOLSA DE AIRE CONDUCTOR + CÁMARA DE REVERSA +AIRE ACONDICIONADO + ALARMA DE REVERSA + MANDOS AL VOLANTE+ CIERRE CENTRALIZADO VENTANAS ELÉCTRICAS + PUERTO USB (SÓLO ENERGÍA)",
+      "frenos": "VAC-DISCO/TAMBOR ABS+EBD+BOOST ASSIST",
+      "hp": "182 @ 2600",
+      "torque": "372 @ 1600",
+      "km_litro": "6 KM/LT",
+      "llantas": "225 / 70 R19.5 - 12 PR"
     },
     "FORWARD 1100L": {
       "precio_2025": 1694600,
@@ -936,7 +980,29 @@
     },
     "FORWARD 1100M": {
       "precio_2025": 0,
-      "precio_2026": 0
+      "precio_2026": 0,
+      "linea": "Forward",
+      "modelo": "FORWARD 1100M",
+      "ano_modelo": 2026,
+      "precio": 0,
+      "capacidad_carga": "10 T",
+      "largo_chasis": 8.605,
+      "alto_camion": 2.75,
+      "ancho_cabina": 2.395,
+      "largo_aplicacion": 6.85,
+      "alto_aplicacion": 2.6,
+      "ancho_aplicacion": 2.6,
+      "distancia_entre_ejes": 5.1,
+      "pvb": 15.9,
+      "motor": "6 cilindros 7,790 CC OHC / TURBO VGS + EGR + DPD + SCR",
+      "tecnologia": "EURO VI",
+      "garantia": "2  años SIN límite de kms",
+      "equipo": "BOLSA DE AIRE CONDUCTOR + CÁMARA DE REVERSA +AIRE ACONDICIONADO + ALARMA DE REVERSA + PANTALLA DE INFORMACIÓN MÚLTIPLE",
+      "frenos": "FRENOS DE AIRE TAMBOR/TAMBOR + ABS",
+      "hp": "271 @ 2400",
+      "torque": "724 @ 1450",
+      "km_litro": "4.5 KM/LT",
+      "llantas": "11R22.5 148 / 145"
     },
     "FORWARD 1100Q": {
       "precio_2025": 1716800,
@@ -992,7 +1058,29 @@
     },
     "FORWARD 1400M": {
       "precio_2025": 0,
-      "precio_2026": 0
+      "precio_2026": 0,
+      "linea": "Forward",
+      "modelo": "FORWARD 1400M",
+      "ano_modelo": 2026,
+      "precio": 0,
+      "capacidad_carga": "12 T",
+      "largo_chasis": 8.605,
+      "alto_camion": 2.75,
+      "ancho_cabina": 2.395,
+      "largo_aplicacion": 6.85,
+      "alto_aplicacion": 2.6,
+      "ancho_aplicacion": 2.6,
+      "distancia_entre_ejes": 5.1,
+      "pvb": 17,
+      "motor": "6 cilindros 7,790 CC OHC / TURBO VGS + EGR + DPD + SCR",
+      "tecnologia": "EURO VI",
+      "garantia": "2  años SIN límite de kms",
+      "equipo": "BOLSA DE AIRE CONDUCTOR + CÁMARA DE REVERSA +AIRE ACONDICIONADO + ALARMA DE REVERSA + PANTALLA DE INFORMACIÓN MÚLTIPLE",
+      "frenos": "FRENOS DE AIRE TAMBOR/TAMBOR + ABS",
+      "hp": "271 @ 2400",
+      "torque": "724 @ 1450",
+      "km_litro": "4.5 KM/LT",
+      "llantas": "11R22.5 148 / 145"
     },
     "FORWARD 1400Q": {
       "precio_2025": 1826000,
@@ -1071,216 +1159,6 @@
       "torque": "521 @ 1600",
       "km_litro": "5.5 KM/LT",
       "llantas": "225 / 70 R19.5 G"
-    },
-    "Forward 1100L": {
-      "cubicaje_peso": {
-        "exterior": {
-          "largo_cm": 609.6,
-          "ancho_cm": 250,
-          "alto_cm": null
-        },
-        "exterior_carga": {
-          "largo_cm": 260,
-          "ancho_cm": 250,
-          "alto_cm": null
-        },
-        "interior_carga_2": {
-          "largo_cm": 250,
-          "ancho_cm": 230,
-          "alto_cm": null
-        }
-      },
-      "distancia_consumo": {
-        "capacidad_tanque_litros": 200,
-        "rendimiento_min_km_litro": 4,
-        "rendimiento_promedio_km_litro": 4.5,
-        "rendimiento_max_km_litro": 5,
-        "distancia_min_km": 800,
-        "distancia_promedio_km": 900,
-        "distancia_max_km": 1000,
-        "hp": 237,
-        "torque_lb_pie": 520,
-        "relacion_1ra_velocidad": 6.615,
-        "relacion_diferencial": 6.143,
-        "torque_final_lb_pie": 21130.6914,
-        "motor_cilindros_litros": "6C en L 7.8 Litros",
-        "frenos_tipo_rin": "Tambor/Tambor - Frenos de Aire - R22.5"
-      }
-    },
-    "Forward 1100Q": {
-      "cubicaje_peso": {
-        "exterior": {
-          "largo_cm": 800,
-          "ancho_cm": 250,
-          "alto_cm": null
-        },
-        "exterior_carga": {
-          "largo_cm": 260,
-          "ancho_cm": 250,
-          "alto_cm": null
-        },
-        "interior_carga_2": {
-          "largo_cm": 250,
-          "ancho_cm": 230,
-          "alto_cm": null
-        }
-      },
-      "distancia_consumo": {
-        "capacidad_tanque_litros": 200,
-        "rendimiento_min_km_litro": 4,
-        "rendimiento_promedio_km_litro": 4.5,
-        "rendimiento_max_km_litro": 5,
-        "distancia_min_km": 800,
-        "distancia_promedio_km": 900,
-        "distancia_max_km": 1000,
-        "hp": 237,
-        "torque_lb_pie": 520,
-        "relacion_1ra_velocidad": 6.615,
-        "relacion_diferencial": 6.143,
-        "torque_final_lb_pie": 21130.6914,
-        "motor_cilindros_litros": "6C en L 7.8 Litros",
-        "frenos_tipo_rin": "Tambor/Tambor - Frenos de Aire - R22.5"
-      }
-    },
-    "Forward 1400K": {
-      "cubicaje_peso": {
-        "exterior": {
-          "largo_cm": 550,
-          "ancho_cm": 250,
-          "alto_cm": null
-        },
-        "exterior_carga": {
-          "largo_cm": 260,
-          "ancho_cm": 250,
-          "alto_cm": null
-        },
-        "interior_carga_2": {
-          "largo_cm": 250,
-          "ancho_cm": 230,
-          "alto_cm": null
-        }
-      },
-      "distancia_consumo": {
-        "capacidad_tanque_litros": 200,
-        "rendimiento_min_km_litro": 4,
-        "rendimiento_promedio_km_litro": 4.5,
-        "rendimiento_max_km_litro": 5,
-        "distancia_min_km": 800,
-        "distancia_promedio_km": 900,
-        "distancia_max_km": 1000,
-        "hp": 237,
-        "torque_lb_pie": 520,
-        "relacion_1ra_velocidad": 9.479,
-        "relacion_diferencial": 6.429,
-        "torque_final_lb_pie": 31689.05532,
-        "motor_cilindros_litros": "6C en L 7.8 Litros",
-        "frenos_tipo_rin": "Tambor/Tambor - Frenos de Aire - R22.5"
-      }
-    },
-    "Forward 1400Q": {
-      "cubicaje_peso": {
-        "exterior": {
-          "largo_cm": 800,
-          "ancho_cm": 250,
-          "alto_cm": 250
-        },
-        "exterior_carga": {
-          "largo_cm": 260,
-          "ancho_cm": 250,
-          "alto_cm": null
-        },
-        "interior_carga_2": {
-          "largo_cm": 250,
-          "ancho_cm": 230,
-          "alto_cm": null
-        }
-      },
-      "distancia_consumo": {
-        "capacidad_tanque_litros": 400,
-        "rendimiento_min_km_litro": 4,
-        "rendimiento_promedio_km_litro": 4.5,
-        "rendimiento_max_km_litro": 5,
-        "distancia_min_km": 1600,
-        "distancia_promedio_km": 1800,
-        "distancia_max_km": 2000,
-        "hp": 237,
-        "torque_lb_pie": 520,
-        "relacion_1ra_velocidad": 9.479,
-        "relacion_diferencial": 6.429,
-        "torque_final_lb_pie": 31689.05532,
-        "motor_cilindros_litros": "6C en L 7.8 Litros",
-        "frenos_tipo_rin": "Tambor/Tambor - Frenos de Aire - R22.5"
-      }
-    },
-    "Forward 800K": {
-      "cubicaje_peso": {
-        "exterior": {
-          "largo_cm": 526.7,
-          "ancho_cm": 250,
-          "alto_cm": null
-        },
-        "exterior_carga": {
-          "largo_cm": 250,
-          "ancho_cm": 230,
-          "alto_cm": null
-        },
-        "interior_carga_2": {
-          "largo_cm": 240,
-          "ancho_cm": 210,
-          "alto_cm": null
-        }
-      },
-      "distancia_consumo": {
-        "capacidad_tanque_litros": 200,
-        "rendimiento_min_km_litro": 4.5,
-        "rendimiento_promedio_km_litro": 5,
-        "rendimiento_max_km_litro": 5.5,
-        "distancia_min_km": 900,
-        "distancia_promedio_km": 1000,
-        "distancia_max_km": 1100,
-        "hp": 237,
-        "torque_lb_pie": 520,
-        "relacion_1ra_velocidad": 6.615,
-        "relacion_diferencial": 4.1,
-        "torque_final_lb_pie": 14103.18,
-        "motor_cilindros_litros": "6C en L 7.8 Litros",
-        "frenos_tipo_rin": "Tambor/Tambor - Aire Sobre Hidráulico - R19.5"
-      }
-    },
-    "Forward 800M": {
-      "cubicaje_peso": {
-        "exterior": {
-          "largo_cm": 626.7,
-          "ancho_cm": 250,
-          "alto_cm": null
-        },
-        "exterior_carga": {
-          "largo_cm": 250,
-          "ancho_cm": 230,
-          "alto_cm": null
-        },
-        "interior_carga_2": {
-          "largo_cm": 240,
-          "ancho_cm": 210,
-          "alto_cm": null
-        }
-      },
-      "distancia_consumo": {
-        "capacidad_tanque_litros": 200,
-        "rendimiento_min_km_litro": 4.5,
-        "rendimiento_promedio_km_litro": 5,
-        "rendimiento_max_km_litro": 5.5,
-        "distancia_min_km": 900,
-        "distancia_promedio_km": 1000,
-        "distancia_max_km": 1100,
-        "hp": 237,
-        "torque_lb_pie": 520,
-        "relacion_1ra_velocidad": 6.615,
-        "relacion_diferencial": 4.1,
-        "torque_final_lb_pie": 14103.18,
-        "motor_cilindros_litros": "6C en L 7.8 Litros",
-        "frenos_tipo_rin": "Tambor/Tambor - Aire Sobre Hidráulico - R19.5"
-      }
     }
   },
   "fuentes": {
