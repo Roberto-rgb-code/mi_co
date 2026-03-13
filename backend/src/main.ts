@@ -1,3 +1,9 @@
+import * as dotenv from 'dotenv';
+import { join } from 'path';
+
+// Cargar .env desde la raíz ANTES de que Nest arranque
+dotenv.config({ path: join(__dirname, '..', '..', '.env') });
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 

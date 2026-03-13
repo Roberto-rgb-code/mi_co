@@ -69,6 +69,11 @@ npm run frontend
 | `npm run backend:build` | Compila backend para producción |
 | `npm run db:migrate` | Ejecuta migraciones |
 | `npm run db:migrate:generate` | Genera migración desde entidades |
+| `npm run test` | Ejecuta tests (backend + frontend) |
+| `npm run test:backend` | Tests del backend (Jest) |
+| `npm run test:frontend` | Tests del frontend (Vitest) |
+| `npm run test:api` | Smoke test contra API (requiere backend en :3000) |
+| `npm run test:full` | Tests + builds completos |
 
 ## Deploy en Railway
 
