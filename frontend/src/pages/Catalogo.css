@@ -1,0 +1,64 @@
+.catalogo {
+  padding: 2.5rem;
+}
+
+.search-input {
+  margin-top: 1rem;
+  width: 100%;
+  max-width: 400px;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 1rem;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.catalogo-table-wrap {
+  background: white;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.catalogo-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.catalogo-table th,
+.catalogo-table td {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.catalogo-table th {
+  background: var(--bg-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.catalogo-table tbody tr:hover {
+  background: var(--hover-bg);
+}
+
+.catalogo-table .badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  background: rgba(200, 16, 46, 0.12);
+  color: var(--primary);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.price-cell {
+  font-weight: 600;
+  color: var(--primary);
+}

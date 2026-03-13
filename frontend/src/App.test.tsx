@@ -11,13 +11,8 @@ vi.stubGlobal('fetch', vi.fn(() =>
 ));
 
 describe('App', () => {
-  it('debe renderizar el título Isuzu', () => {
+  it('debe renderizar el login o la app', () => {
     render(<App />);
-    expect(screen.getByText(/ISUZU/)).toBeTruthy();
-  });
-
-  it('debe mostrar el tagline', () => {
-    render(<App />);
-    expect(screen.getByText(/cotización ELF y Forward/i)).toBeTruthy();
+    expect(screen.getByText(/ISUZU/i)).toBeTruthy();
   });
 });

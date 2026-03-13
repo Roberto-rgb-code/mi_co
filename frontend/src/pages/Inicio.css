@@ -1,0 +1,60 @@
+.inicio {
+  padding: 2.5rem;
+}
+
+.inicio .hero {
+  margin-bottom: 3rem;
+}
+
+.inicio .hero h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.inicio .hero p {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.action-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.75rem;
+  background: white;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+}
+
+.action-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 16px rgba(200, 16, 46, 0.12);
+  transform: translateY(-2px);
+}
+
+.action-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.action-card h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.35rem;
+}
+
+.action-card p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
