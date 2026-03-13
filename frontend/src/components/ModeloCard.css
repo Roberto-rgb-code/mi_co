@@ -1,0 +1,74 @@
+.modelo-card {
+  background: white;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modelo-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.modelo-card-image {
+  position: relative;
+  aspect-ratio: 400/260;
+  background: var(--bg-secondary);
+}
+
+.modelo-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modelo-card-badge {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.3rem 0.65rem;
+  background: var(--primary);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 6px;
+  letter-spacing: 0.05em;
+}
+
+.modelo-card-body {
+  padding: 1.25rem;
+}
+
+.modelo-card-body h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.35rem;
+}
+
+.modelo-card-body .capacidad {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.modelo-card-body .especs {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.modelo-card-body .km {
+  font-size: 0.85rem;
+  color: var(--primary);
+  margin-bottom: 0.75rem;
+}
+
+.modelo-card-body .precio {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary);
+}

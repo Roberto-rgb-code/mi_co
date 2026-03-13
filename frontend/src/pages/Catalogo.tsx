@@ -1,81 +1,83 @@
 import { useState, useEffect } from 'react';
+import type { ModeloCatalog } from '../data/catalog';
+import { ModeloCard } from '../components/ModeloCard';
+import { ModeloDetalle } from '../components/ModeloDetalle';
 import './Catalogo.css';
 
-interface Modelo {
-  id: string;
-  catalogo: string;
-  familia: string;
-  precio: string;
-  capacidadCarga: string;
-  kmPorLitro: string;
-}
-
 export function Catalogo() {
-  const [modelos, setModelos] = useState<Modelo[]>([]);
+  const [modelos, setModelos] = useState<ModeloCatalog[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
+  const [lineaFilter, setLineaFilter] = useState<string>('todas');
+  const [selected, setSelected] = useState<ModeloCatalog | null>(null);
 
   useEffect(() => {
-    fetch('/api/modelos')
-      .then(res => res.ok ? res.json() : Promise.reject(res))
-      .then(data => setModelos(data))
+    fetch('/catalog_data.json')
+      .then(res => res.json())
+      .then(data => {
+        const obj = data.modelos || {};
+        const list = Object.entries(obj).map(([key, val]) => ({
+          ...(val as ModeloCatalog),
+          modelo: (val as ModeloCatalog).modelo || key,
+        }));
+        setModelos(list);
+      })
       .catch(() => setModelos([]))
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = modelos.filter(
-    m =>
-      m.catalogo.toLowerCase().includes(filter.toLowerCase()) ||
-      m.familia.toLowerCase().includes(filter.toLowerCase())
-  );
-
-  const formatPrice = (n: string) =>
-    new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(parseFloat(n || '0'));
+  const filtered = modelos.filter(m => {
+    const matchSearch =
+      m.modelo?.toLowerCase().includes(filter.toLowerCase()) ||
+      m.linea?.toLowerCase().includes(filter.toLowerCase());
+    const matchLinea = lineaFilter === 'todas' || m.linea === lineaFilter;
+    return matchSearch && matchLinea;
+  });
 
   return (
     <div className="page catalogo">
       <div className="page-header">
         <h1>Catálogo</h1>
-        <p>Todos los modelos Isuzu disponibles</p>
-        <input
-          type="search"
-          placeholder="Buscar por modelo o familia..."
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="search-input"
-        />
+        <p>Todos los modelos Isuzu con especificaciones completas</p>
+        <div className="catalogo-filters">
+          <input
+            type="search"
+            placeholder="Buscar modelo..."
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+            className="search-input"
+          />
+          <select
+            value={lineaFilter}
+            onChange={e => setLineaFilter(e.target.value)}
+            className="linea-select"
+          >
+            <option value="todas">Todas las líneas</option>
+            <option value="ELF">ELF</option>
+            <option value="Forward">Forward</option>
+          </select>
+        </div>
       </div>
 
       {loading ? (
         <div className="loading">
-          <div className="spinner"></div>
-          <p>Cargando...</p>
+          <div className="spinner" />
+          <p>Cargando catálogo...</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="empty-state">
+          <p>No hay modelos que coincidan con tu búsqueda.</p>
         </div>
       ) : (
-        <div className="catalogo-table-wrap">
-          <table className="catalogo-table">
-            <thead>
-              <tr>
-                <th>Modelo</th>
-                <th>Familia</th>
-                <th>Capacidad</th>
-                <th>Consumo</th>
-                <th>Precio</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(m => (
-                <tr key={m.id}>
-                  <td><strong>{m.catalogo}</strong></td>
-                  <td><span className="badge">{m.familia}</span></td>
-                  <td>{m.capacidadCarga || '-'}</td>
-                  <td>{m.kmPorLitro || '-'}</td>
-                  <td className="price-cell">{formatPrice(m.precio)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="catalogo-grid">
+          {filtered.map(m => (
+            <ModeloCard key={m.modelo} modelo={m} onClick={() => setSelected(m)} />
+          ))}
         </div>
+      )}
+
+      {selected && (
+        <ModeloDetalle modelo={selected} onClose={() => setSelected(null)} />
       )}
     </div>
   );

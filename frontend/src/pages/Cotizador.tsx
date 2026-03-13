@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import './Cotizador.css';
 
 interface Modelo {
-  id: string;
-  catalogo: string;
-  familia: string;
-  precio: string;
-  capacidadCarga: string;
-  kmPorLitro: string;
+  modelo: string;
+  linea?: string;
+  precio?: number;
+  precio_2026?: number;
+  capacidad_carga?: string;
+  km_litro?: string;
 }
 
 export function Cotizador() {
@@ -17,15 +17,22 @@ export function Cotizador() {
   const [selected, setSelected] = useState<Modelo | null>(null);
 
   useEffect(() => {
-    fetch('/api/modelos')
+    fetch('/catalog_data.json')
       .then(res => res.ok ? res.json() : Promise.reject(res))
-      .then(data => setModelos(data))
+      .then(data => {
+        const obj = data.modelos || {};
+        const list = Object.entries(obj).map(([key, val]) => ({
+          ...(val as Modelo),
+          modelo: (val as Modelo).modelo || key,
+        }));
+        setModelos(list);
+      })
       .catch(() => setError('No se pudo conectar con el servidor.'))
       .finally(() => setLoading(false));
   }, []);
 
   const formatPrice = (n: string) =>
-    new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(parseFloat(n || '0'));
+    new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(parseFloat(n || '0'));
 
   return (
     <div className="page cotizador">
@@ -58,15 +65,15 @@ export function Cotizador() {
           <div className="modelos-grid">
             {modelos.map(m => (
               <article
-                key={m.id}
-                className={`card ${selected?.id === m.id ? 'selected' : ''}`}
+                key={m.modelo}
+                className={`card ${selected?.modelo === m.modelo ? 'selected' : ''}`}
                 onClick={() => setSelected(m)}
               >
-                <div className="card-badge">{m.familia}</div>
-                <h3>{m.catalogo}</h3>
-                <p className="capacity">{m.capacidadCarga || '-'}</p>
-                <p className="price">{formatPrice(m.precio)}</p>
-                {m.kmPorLitro && <p className="km">{m.kmPorLitro}</p>}
+                <div className="card-badge">{m.linea || 'ISUZU'}</div>
+                <h3>{m.modelo}</h3>
+                <p className="capacity">{m.capacidad_carga || '-'}</p>
+                <p className="price">{formatPrice(String(m.precio ?? m.precio_2026 ?? 0))}</p>
+                {m.km_litro && <p className="km">{m.km_litro}</p>}
               </article>
             ))}
           </div>
@@ -75,9 +82,9 @@ export function Cotizador() {
             <aside className="quote-summary">
               <h3>Resumen de cotización</h3>
               <div className="quote-detail">
-                <strong>{selected.catalogo}</strong>
-                <p>{selected.capacidadCarga}</p>
-                <p className="precio-final">{formatPrice(selected.precio)}</p>
+<strong>{selected.modelo}</strong>
+              <p>{selected.capacidad_carga}</p>
+              <p className="precio-final">{formatPrice(String(selected.precio ?? selected.precio_2026 ?? 0))}</p>
               </div>
             </aside>
           )}

@@ -1,0 +1,116 @@
+.modelo-detalle-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.modelo-detalle {
+  background: white;
+  border-radius: 16px;
+  max-width: 720px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.modelo-detalle-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: var(--bg-secondary);
+  border-radius: 50%;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  z-index: 1;
+}
+
+.modelo-detalle-close:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.modelo-detalle-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+@media (max-width: 600px) {
+  .modelo-detalle-header {
+    grid-template-columns: 1fr;
+  }
+}
+
+.modelo-detalle-image {
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 600/380;
+  background: var(--bg-secondary);
+}
+
+.modelo-detalle-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modelo-detalle-info .badge {
+  display: inline-block;
+  padding: 0.3rem 0.65rem;
+  background: var(--primary);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.modelo-detalle-info h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.35rem;
+}
+
+.modelo-detalle-info .capacidad {
+  font-size: 1rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.modelo-detalle-info .precio {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.modelo-detalle-specs {
+  padding: 0 2rem 2rem;
+}
+
+.modelo-detalle-specs h3 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 1rem 0 0.35rem;
+}
+
+.modelo-detalle-specs p {
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.5;
+}
