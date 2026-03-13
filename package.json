@@ -1,0 +1,21 @@
+{
+  "name": "isuzu-cotizador",
+  "version": "1.0.0",
+  "description": "Sistema de cotización Isuzu - Camiones ELF y Forward",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "backend": "npm run start:dev -w backend",
+    "backend:build": "npm run build -w backend",
+    "frontend": "npm run dev -w frontend",
+    "frontend:build": "npm run build -w frontend",
+    "db:migrate": "cd backend && npm run migration:run",
+    "db:migrate:generate": "npm run migration:generate -w backend"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

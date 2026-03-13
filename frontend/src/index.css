@@ -1,0 +1,25 @@
+:root {
+  --isuzu-red: #c8102e;
+  --isuzu-dark: #1a1a2e;
+  --isuzu-gray: #16213e;
+  --accent: #0f3460;
+  --text: #e8e8e8;
+  --text-muted: #8892a6;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  background: linear-gradient(135deg, var(--isuzu-dark) 0%, var(--isuzu-gray) 100%);
+  min-height: 100vh;
+  color: var(--text);
+}
+
+#root {
+  min-height: 100vh;
+}

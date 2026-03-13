@@ -1,0 +1,180 @@
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.logo-text {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--isuzu-red);
+  letter-spacing: 0.2em;
+}
+
+.logo-sub {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  letter-spacing: 0.3em;
+}
+
+.tagline {
+  margin-top: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.hero h1 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.hero p {
+  color: var(--text-muted);
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--accent);
+  border-top-color: var(--isuzu-red);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-banner {
+  background: rgba(200, 16, 46, 0.2);
+  border: 1px solid var(--isuzu-red);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.error-banner .hint {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  background: rgba(15, 52, 96, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.card:hover {
+  border-color: var(--isuzu-red);
+  transform: translateY(-2px);
+}
+
+.card.selected {
+  border-color: var(--isuzu-red);
+  box-shadow: 0 0 0 2px var(--isuzu-red);
+}
+
+.card-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  padding: 0.25rem 0.6rem;
+  background: var(--isuzu-red);
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+}
+
+.card h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.card .capacity {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.card .price {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--isuzu-red);
+  margin-top: 0.75rem;
+}
+
+.card .km {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.sidebar {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(15, 52, 96, 0.5);
+  border-radius: 12px;
+  border-left: 4px solid var(--isuzu-red);
+}
+
+.sidebar h3 {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  color: var(--text-muted);
+}
+
+.precio-final {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--isuzu-red);
+  margin-top: 0.5rem;
+}
+
+.footer {
+  text-align: center;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
