@@ -42,13 +42,24 @@ PORT=3000
 npm run db:migrate
 ```
 
-### 4. Iniciar backend
+### 4. (Opcional) Cargar datos de ejemplo
 
 ```bash
-npm run backend
+cd backend && npm run seed
 ```
 
-El backend estará en http://localhost:3000
+### 5. Iniciar backend y frontend
+
+```bash
+# Terminal 1 - Backend
+npm run backend
+
+# Terminal 2 - Frontend (dev con hot reload)
+npm run frontend
+```
+
+- Backend: http://localhost:3000
+- Frontend: http://localhost:5173
 
 ## Scripts
 

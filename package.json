@@ -13,7 +13,8 @@
     "frontend": "npm run dev -w frontend",
     "frontend:build": "npm run build -w frontend",
     "db:migrate": "cd backend && npm run migration:run",
-    "db:migrate:generate": "npm run migration:generate -w backend"
+    "db:migrate:generate": "npm run migration:generate -w backend",
+    "seed": "npm run seed -w backend"
   },
   "engines": {
     "node": ">=18.0.0"
