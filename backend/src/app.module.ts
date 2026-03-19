@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { AppController } from './app.controller';
 import { ModelosModule } from './modelos/modelos.module';
@@ -12,15 +11,7 @@ import { ModelosModule } from './modelos/modelos.module';
       isGlobal: true,
       envFilePath: [join(__dirname, '..', '..', '.env'), '.env'],
     }),
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', '..', 'frontend', 'dist'),
-      exclude: ['/api*'],
-      serveRoot: '/',
-      // Si no hay archivo (ej. /catalogo), pasar al siguiente handler → index.html en AppController
-      serveStaticOptions: {
-        fallthrough: true,
-      },
-    }),
+    // Estáticos del frontend: ver main.ts (express.static ANTES del router Nest)
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL,

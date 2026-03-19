@@ -2,7 +2,7 @@ import { Controller, Get, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { join } from 'path';
 
-/** Mismo path que ServeStaticModule (dist del build de Vite) */
+/** Mismo path que express.static en main.ts (dist del build de Vite) */
 const FRONTEND_DIST = join(__dirname, '..', '..', 'frontend', 'dist');
 
 @Controller()
@@ -22,7 +22,7 @@ export class AppController {
 
   /**
    * SPA: al refrescar en /catalogo, /login, etc. el servidor debe devolver index.html
-   * para que React Router resuelva la ruta. Requiere fallthrough: true en ServeStaticModule.
+   * para que React Router resuelva la ruta (tras express.static con fallthrough en main.ts).
    */
   @Get('*')
   spaFallback(@Req() req: Request, @Res() res: Response) {
