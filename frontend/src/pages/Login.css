@@ -1,10 +1,31 @@
 .login-page {
   min-height: 100vh;
   display: flex;
+  align-items: stretch;
+  background: linear-gradient(135deg, var(--bg) 0%, var(--bg-secondary) 100%);
+}
+
+.login-left {
+  flex: 0 0 50%;
+  display: flex;
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  background: linear-gradient(135deg, var(--bg) 0%, var(--bg-secondary) 100%);
+}
+
+.login-left dotlottie-player,
+.login-left canvas {
+  width: 100% !important;
+  max-width: 420px;
+  height: auto !important;
+}
+
+.login-right {
+  flex: 0 0 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
 }
 
 .login-card {
@@ -103,4 +124,26 @@
   font-size: 0.8rem;
   color: var(--text-muted);
   text-align: center;
+}
+
+@media (max-width: 900px) {
+  .login-page {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 2rem;
+  }
+
+  .login-left {
+    flex: none;
+    width: 100%;
+    max-width: 280px;
+    padding: 1rem;
+  }
+
+  .login-right {
+    flex: none;
+    width: 100%;
+    padding: 1rem;
+  }
 }

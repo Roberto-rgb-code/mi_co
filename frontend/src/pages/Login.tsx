@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import './Login.css';
 
 export function Login() {
@@ -26,6 +27,14 @@ export function Login() {
 
   return (
     <div className="login-page">
+      <div className="login-left">
+        <DotLottieReact
+          src="https://lottie.host/3b1e64cb-f6d8-4e7f-b7ce-94ea2cfc9903/pcgdZmvkPx.lottie"
+          loop
+          autoplay
+        />
+      </div>
+      <div className="login-right">
       <div className="login-card">
         <div className="login-header">
           <span className="login-logo">ISUZU</span>
@@ -60,6 +69,7 @@ export function Login() {
           </button>
         </form>
         <p className="login-demo">Demo: cualquier email y contraseña</p>
+      </div>
       </div>
     </div>
   );
