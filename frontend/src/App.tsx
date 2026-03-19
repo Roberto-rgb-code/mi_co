@@ -5,6 +5,7 @@ import { Login } from './pages/Login';
 import { Inicio } from './pages/Inicio';
 import { Cotizador } from './pages/Cotizador';
 import { Catalogo } from './pages/Catalogo';
+import { Asistente } from './pages/Asistente';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -27,6 +28,7 @@ function AppRoutes() {
         <Route path="/" element={<Inicio />} />
         <Route path="/cotizador" element={<Cotizador />} />
         <Route path="/catalogo" element={<Catalogo />} />
+        <Route path="/asistente" element={<Asistente />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

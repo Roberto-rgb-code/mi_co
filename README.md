@@ -32,7 +32,14 @@ Crear archivo `.env` en la raíz (copiar de `.env.example`):
 ```env
 DATABASE_URL=postgresql://usuario:password@host:puerto/railway
 PORT=3000
+
+# Asistente (ChatGPT / OpenAI) — solo en el servidor, nunca en el frontend
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o-mini
 ```
+
+- **Dónde poner la API key**: archivo **`.env` en la raíz del repo** (mismo nivel que `package.json`), variables `OPENAI_API_KEY` y opcionalmente `OPENAI_MODEL`. En **Railway**: proyecto → servicio → **Variables** → añadir `OPENAI_API_KEY` (y si quieres `OPENAI_MODEL`, por defecto ya usa `gpt-4o-mini`, el modelo chat económico recomendado).
+- Crea la clave en [OpenAI API keys](https://platform.openai.com/api-keys).
 
 ⚠️ **Nunca** subir `.env` a GitHub. Está en `.gitignore`.
 
@@ -83,6 +90,8 @@ npm run frontend
 4. Configurar variables de entorno en Railway:
    - `DATABASE_URL`: tu conexión PostgreSQL (ej. la de Railway)
    - `NODE_ENV`: `production`
+   - `OPENAI_API_KEY`: clave de OpenAI (necesaria para el módulo **Asistente**)
+   - `OPENAI_MODEL` (opcional): por defecto `gpt-4o-mini`
 5. Railway detectará el proyecto y usará `nixpacks.toml`
 6. Opcional: antes del deploy, ejecutar migraciones (o configurar un job)
 
@@ -98,7 +107,7 @@ isuzu_miche/
 │   │   ├── migrations/
 │   │   └── config/
 │   └── package.json
-├── frontend/         # React (próximamente)
+├── frontend/         # React (Vite)
 ├── .env              # Variables (no subir)
 ├── .env.example      # Plantilla
 └── package.json      # Monorepo root

@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { join } from 'path';
 import { AppController } from './app.controller';
 import { ModelosModule } from './modelos/modelos.module';
+import { AssistantModule } from './assistant/assistant.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ModelosModule } from './modelos/modelos.module';
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     }),
     ModelosModule,
+    AssistantModule,
   ],
   controllers: [AppController],
 })

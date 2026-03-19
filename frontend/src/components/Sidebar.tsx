@@ -38,6 +38,10 @@ export function Sidebar() {
           <span className="nav-icon">🚛</span>
           <span className="nav-text">Catálogo</span>
         </NavLink>
+        <NavLink to="/asistente" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} title="Asistente">
+          <span className="nav-icon">💬</span>
+          <span className="nav-text">Asistente</span>
+        </NavLink>
       </nav>
 
       <div className="sidebar-footer">

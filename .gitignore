@@ -31,3 +31,6 @@ coverage/
 
 # Railway
 .railway/
+
+# Excel temporal (Office)
+~$*

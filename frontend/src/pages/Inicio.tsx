@@ -22,6 +22,11 @@ export function Inicio() {
           <h3>Catálogo</h3>
           <p>Explora todos los modelos disponibles</p>
         </Link>
+        <Link to="/asistente" className="action-card">
+          <span className="action-icon">💬</span>
+          <h3>Asistente</h3>
+          <p>Orientación según carga, precio y giro de tu negocio</p>
+        </Link>
       </div>
     </div>
   );

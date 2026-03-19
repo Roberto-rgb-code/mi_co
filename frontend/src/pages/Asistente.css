@@ -1,0 +1,239 @@
+.asistente {
+  padding: 2.5rem;
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 4rem);
+}
+
+.asistente-header h1 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.asistente-sub {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  max-width: 40rem;
+}
+
+.asistente-sub a {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.asistente-sub a:hover {
+  text-decoration: underline;
+}
+
+.asistente-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.asistente-chips .chip {
+  font-size: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  background: var(--hover-bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+}
+
+.asistente-error {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(200, 16, 46, 0.08);
+  border: 1px solid rgba(200, 16, 46, 0.35);
+  border-radius: 10px;
+  color: var(--primary);
+  font-size: 0.9rem;
+}
+
+.asistente-chat {
+  flex: 1;
+  margin-top: 1.5rem;
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+  max-height: min(52vh, 520px);
+}
+
+.asistente-bubble {
+  max-width: 92%;
+  padding: 0.85rem 1.1rem;
+  border-radius: 14px;
+  line-height: 1.45;
+}
+
+.asistente-bubble-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.35rem;
+  opacity: 0.85;
+}
+
+.asistente-bubble--assistant {
+  align-self: flex-start;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+.asistente-bubble--assistant .asistente-bubble-label {
+  color: var(--primary);
+}
+
+.asistente-bubble--user {
+  align-self: flex-end;
+  background: var(--text);
+  color: #fff;
+}
+
+.asistente-bubble--user .asistente-bubble-label {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.asistente-bubble-text {
+  font-size: 0.95rem;
+  color: inherit;
+}
+
+.asistente-bubble--assistant .asistente-bubble-text {
+  color: var(--text);
+}
+
+.asistente-bubble-text p {
+  margin: 0 0 0.5rem;
+}
+
+.asistente-bubble-text p:last-child {
+  margin-bottom: 0;
+}
+
+.asistente-typing .dots {
+  display: inline-flex;
+  gap: 4px;
+  padding: 0.25rem 0;
+}
+
+.asistente-typing .dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  animation: asistente-dot 1.2s ease-in-out infinite;
+}
+
+.asistente-typing .dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.asistente-typing .dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes asistente-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.9);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.asistente-input-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.asistente-textarea {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 52px;
+  max-height: 160px;
+  background: #fff;
+}
+
+.asistente-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.12);
+}
+
+.asistente-textarea:disabled {
+  opacity: 0.65;
+}
+
+.asistente-send {
+  padding: 0.75rem 1.25rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  min-width: 88px;
+}
+
+.asistente-send:hover:not(:disabled) {
+  background: var(--primary-dark);
+}
+
+.asistente-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.asistente-footnote {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.asistente-footnote code {
+  font-size: 0.7rem;
+  background: var(--hover-bg);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+@media (max-width: 640px) {
+  .asistente {
+    padding: 1.25rem;
+  }
+
+  .asistente-chat {
+    max-height: min(45vh, 400px);
+  }
+}
