@@ -16,6 +16,10 @@ import { ModelosModule } from './modelos/modelos.module';
       rootPath: join(__dirname, '..', '..', 'frontend', 'dist'),
       exclude: ['/api*'],
       serveRoot: '/',
+      // Si no hay archivo (ej. /catalogo), pasar al siguiente handler → index.html en AppController
+      serveStaticOptions: {
+        fallthrough: true,
+      },
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',

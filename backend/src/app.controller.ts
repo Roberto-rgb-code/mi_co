@@ -1,4 +1,9 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Req, Res } from '@nestjs/common';
+import type { Request, Response } from 'express';
+import { join } from 'path';
+
+/** Mismo path que ServeStaticModule (dist del build de Vite) */
+const FRONTEND_DIST = join(__dirname, '..', '..', 'frontend', 'dist');
 
 @Controller()
 export class AppController {
@@ -13,5 +18,42 @@ export class AppController {
   @Get('health')
   health(): { status: string } {
     return { status: 'ok' };
+  }
+
+  /**
+   * SPA: al refrescar en /catalogo, /login, etc. el servidor debe devolver index.html
+   * para que React Router resuelva la ruta. Requiere fallthrough: true en ServeStaticModule.
+   */
+  @Get('*')
+  spaFallback(@Req() req: Request, @Res() res: Response) {
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({
+        message: `Cannot GET ${req.path}`,
+        error: 'Not Found',
+        statusCode: 404,
+      });
+    }
+    const last = req.path.split('.').pop() ?? '';
+    const assetExts = new Set([
+      'js',
+      'css',
+      'map',
+      'ico',
+      'png',
+      'jpg',
+      'jpeg',
+      'gif',
+      'svg',
+      'woff',
+      'woff2',
+      'ttf',
+      'webp',
+      'json',
+      'webmanifest',
+    ]);
+    if (last && assetExts.has(last)) {
+      return res.status(404).end();
+    }
+    return res.sendFile(join(FRONTEND_DIST, 'index.html'));
   }
 }
