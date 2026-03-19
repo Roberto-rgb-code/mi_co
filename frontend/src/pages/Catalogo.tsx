@@ -5,7 +5,7 @@ import { ModeloDetalle } from '../components/ModeloDetalle';
 import './Catalogo.css';
 
 export function Catalogo() {
-  const ITEMS_PER_PAGE = 48; // 8 columnas × 6 filas
+  const ITEMS_PER_PAGE = 8; // 4 columnas × 2 filas
 
   const [modelos, setModelos] = useState<ModeloCatalog[]>([]);
   const [loading, setLoading] = useState(true);
