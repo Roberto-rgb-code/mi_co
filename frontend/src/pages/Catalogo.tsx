@@ -5,11 +5,14 @@ import { ModeloDetalle } from '../components/ModeloDetalle';
 import './Catalogo.css';
 
 export function Catalogo() {
+  const ITEMS_PER_PAGE = 48; // 8 columnas × 6 filas
+
   const [modelos, setModelos] = useState<ModeloCatalog[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
   const [lineaFilter, setLineaFilter] = useState<string>('todas');
   const [selected, setSelected] = useState<ModeloCatalog | null>(null);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     Promise.all([fetch('/catalog_data.json').then(r => r.json()), fetch('/model_images.json').then(r => r.json()).catch(() => ({}))])
@@ -27,6 +30,10 @@ export function Catalogo() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    setPage(1);
+  }, [filter, lineaFilter]);
+
   const filtered = modelos.filter(m => {
     const matchSearch =
       m.modelo?.toLowerCase().includes(filter.toLowerCase()) ||
@@ -34,6 +41,13 @@ export function Catalogo() {
     const matchLinea = lineaFilter === 'todas' || m.linea === lineaFilter;
     return matchSearch && matchLinea;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const start = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginated = filtered.slice(start, start + ITEMS_PER_PAGE);
+
+  const goToPage = (p: number) => setPage(Math.max(1, Math.min(p, totalPages)));
 
   return (
     <div className="page catalogo">
@@ -52,6 +66,7 @@ export function Catalogo() {
             value={lineaFilter}
             onChange={e => setLineaFilter(e.target.value)}
             className="linea-select"
+            aria-label="Filtrar por línea"
           >
             <option value="todas">Todas las líneas</option>
             <option value="ELF">ELF</option>
@@ -71,10 +86,41 @@ export function Catalogo() {
         </div>
       ) : (
         <div className="catalogo-grid">
-          {filtered.map(m => (
+          {paginated.map(m => (
             <ModeloCard key={m.modelo} modelo={m} onClick={() => setSelected(m)} />
           ))}
         </div>
+      )}
+
+      {!loading && filtered.length > 0 && totalPages > 1 && (
+        <nav className="catalogo-pagination" aria-label="Paginación del catálogo">
+          <button
+            type="button"
+            className="pagination-btn"
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage <= 1}
+            aria-label="Página anterior"
+          >
+            Anterior
+          </button>
+          <span className="pagination-info">
+            Página {currentPage} de {totalPages}
+            {filtered.length > ITEMS_PER_PAGE && (
+              <span className="pagination-range">
+                ({start + 1}-{Math.min(start + ITEMS_PER_PAGE, filtered.length)} de {filtered.length})
+              </span>
+            )}
+          </span>
+          <button
+            type="button"
+            className="pagination-btn"
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage >= totalPages}
+            aria-label="Página siguiente"
+          >
+            Siguiente
+          </button>
+        </nav>
       )}
 
       {selected && (
