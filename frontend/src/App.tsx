@@ -16,19 +16,19 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      {/* Layout sin path: evita Outlet vacío al entrar en /catalogo, /cotizador, etc. */}
       <Route
-        path="/"
         element={
           <ProtectedRoute>
             <Layout />
           </ProtectedRoute>
         }
       >
-        <Route index element={<Inicio />} />
-        <Route path="cotizador" element={<Cotizador />} />
-        <Route path="catalogo" element={<Catalogo />} />
+        <Route path="/" element={<Inicio />} />
+        <Route path="/cotizador" element={<Cotizador />} />
+        <Route path="/catalogo" element={<Catalogo />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
