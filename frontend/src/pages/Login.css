@@ -1,69 +1,126 @@
+/* ========== Layout 50/50 ========== */
 .login-page {
   min-height: 100vh;
   display: flex;
   align-items: stretch;
-  background: linear-gradient(135deg, var(--bg) 0%, var(--bg-secondary) 100%);
+  background: #fff;
 }
 
+/* ========== Panel izquierdo: fondo + animación + texto ========== */
 .login-left {
   flex: 0 0 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: 3rem;
+  position: relative;
+  background: linear-gradient(160deg, #8b1538 0%, #6b0f2a 50%, #4a0a1e 100%);
+  overflow: hidden;
 }
 
-.login-left dotlottie-player,
-.login-left canvas {
-  width: 100% !important;
+.login-left-bg-circles {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.06) 0%, transparent 45%),
+    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.05) 0%, transparent 45%),
+    radial-gradient(circle at 60% 20%, rgba(255, 255, 255, 0.04) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+.login-left-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
   max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.login-lottie-wrap {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto 2rem;
+}
+
+.login-lottie-wrap dotlottie-player,
+.login-lottie-wrap canvas {
+  width: 100% !important;
   height: auto !important;
 }
 
+.login-left-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.login-left-sub {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+  line-height: 1.5;
+  max-width: 320px;
+}
+
+/* ========== Panel derecho: formulario ========== */
 .login-right {
   flex: 0 0 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: 3rem;
+  background: #fff;
 }
 
-.login-card {
+.login-right-inner {
   width: 100%;
   max-width: 400px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-  padding: 2.5rem;
+  margin: 0 auto;
 }
 
-.login-header {
-  text-align: center;
-  margin-bottom: 2rem;
+.login-brand {
+  margin-bottom: 2.5rem;
 }
 
 .login-logo {
   display: block;
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--primary);
-  letter-spacing: 0.15em;
+  letter-spacing: 0.12em;
 }
 
 .login-sub {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
-  letter-spacing: 0.2em;
-  margin-top: 0.25rem;
+  letter-spacing: 0.15em;
+  margin-top: 0.2rem;
 }
 
-.login-header p {
-  margin-top: 1rem;
-  color: var(--text-muted);
+.login-welcome {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.login-instruction {
   font-size: 0.95rem;
+  color: var(--text-muted);
+  margin: 0 0 2rem;
+  line-height: 1.4;
 }
 
+/* ========== Formulario ========== */
 .login-form {
   display: flex;
   flex-direction: column;
@@ -87,19 +144,73 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   font-size: 1rem;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fff;
+}
+
+.form-group input::placeholder {
+  color: var(--text-muted);
 }
 
 .form-group input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.15);
+  box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.12);
+}
+
+.input-password-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-password-wrap input {
+  padding-right: 2.75rem;
+  width: 100%;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.2s;
+}
+
+.password-toggle:hover {
+  color: var(--text);
+}
+
+.login-remember {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.login-remember input {
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: var(--primary);
+  cursor: pointer;
 }
 
 .login-error {
   color: var(--primary);
   font-size: 0.9rem;
-  margin: -0.5rem 0 0;
+  margin: -0.25rem 0 0;
 }
 
 .btn-primary {
@@ -111,39 +222,66 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.2s, transform 0.15s;
+  box-shadow: 0 2px 8px rgba(200, 16, 46, 0.25);
 }
 
 .btn-primary:hover {
-  background: #a60d26;
+  background: var(--primary-dark);
   transform: translateY(-1px);
 }
 
+.btn-primary:active {
+  transform: translateY(0);
+}
+
 .login-demo {
-  margin-top: 1.5rem;
+  margin-top: 2rem;
   font-size: 0.8rem;
   color: var(--text-muted);
   text-align: center;
 }
 
+/* ========== Responsive ========== */
 @media (max-width: 900px) {
   .login-page {
     flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding-top: 2rem;
+    align-items: stretch;
   }
 
   .login-left {
     flex: none;
-    width: 100%;
-    max-width: 280px;
-    padding: 1rem;
+    min-height: 280px;
+    padding: 2rem 1.5rem;
+  }
+
+  .login-left-inner {
+    max-width: 100%;
+  }
+
+  .login-lottie-wrap {
+    max-width: 220px;
+    margin-bottom: 1.25rem;
+  }
+
+  .login-left-title {
+    font-size: 1.35rem;
+  }
+
+  .login-left-sub {
+    font-size: 0.9rem;
   }
 
   .login-right {
     flex: none;
-    width: 100%;
-    padding: 1rem;
+    padding: 2rem 1.5rem;
+  }
+
+  .login-right-inner {
+    max-width: 100%;
+  }
+
+  .login-welcome {
+    font-size: 1.65rem;
   }
 }
