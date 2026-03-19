@@ -32,7 +32,7 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 420px;
+  max-width: min(92%, 620px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -41,14 +41,15 @@
 
 .login-lottie-wrap {
   width: 100%;
-  max-width: 360px;
-  margin: 0 auto 2rem;
+  max-width: min(100%, 560px);
+  margin: 0 auto 1.75rem;
 }
 
 .login-lottie-wrap dotlottie-player,
 .login-lottie-wrap canvas {
   width: 100% !important;
   height: auto !important;
+  max-height: none !important;
 }
 
 .login-left-title {
@@ -251,7 +252,7 @@
 
   .login-left {
     flex: none;
-    min-height: 280px;
+    min-height: 300px;
     padding: 2rem 1.5rem;
   }
 
@@ -260,7 +261,7 @@
   }
 
   .login-lottie-wrap {
-    max-width: 220px;
+    max-width: min(88vw, 300px);
     margin-bottom: 1.25rem;
   }
 
