@@ -13,6 +13,7 @@ vi.stubGlobal('fetch', vi.fn(() =>
 describe('App', () => {
   it('debe renderizar el login o la app', () => {
     render(<App />);
-    expect(screen.getByText(/ISUZU/i)).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /Bienvenido/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Iniciar sesión/i })).toBeTruthy();
   });
 });
