@@ -134,8 +134,9 @@ export function Asistente() {
       </form>
 
       <p className="asistente-footnote">
-        Las respuestas son orientativas y no sustituyen asesoría comercial. Modelo: configuración del servidor (
-        <code>OPENAI_MODEL</code>, por defecto <code>gpt-4o-mini</code>).
+        El servidor envía al modelo un resumen y el catálogo compacto desde <code>catalog_data.json</code>, más
+        detalle de los modelos que mejor encajan con tu pregunta. Las respuestas no sustituyen asesoría comercial.{' '}
+        <code>OPENAI_MODEL</code> por defecto <code>gpt-4o-mini</code>.
       </p>
     </div>
   );
