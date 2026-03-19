@@ -20,6 +20,10 @@ export function Login() {
       setError('Ingresa tu correo electrónico');
       return;
     }
+    if (!password) {
+      setError('Ingresa tu contraseña');
+      return;
+    }
     if (login(email, password)) {
       navigate('/');
     } else {
@@ -109,7 +113,7 @@ export function Login() {
               Iniciar sesión
             </button>
           </form>
-          <p className="login-demo">Demo: cualquier email y contraseña</p>
+          <p className="login-demo">Acceso restringido: solo credenciales autorizadas.</p>
         </div>
       </div>
     </div>
