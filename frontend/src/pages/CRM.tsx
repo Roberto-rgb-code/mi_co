@@ -23,13 +23,12 @@ export interface ClienteDto {
 export function CRM() {
   const [clientes, setClientes] = useState<ClienteDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/clientes')
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`Error ${r.status}`))))
-      .then(setClientes)
-      .catch(() => setError('No se pudieron cargar los clientes. Revisa el deploy y que la tabla clientes exista en la base de datos.'))
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setClientes(Array.isArray(data) ? data : []))
+      .catch(() => setClientes([]))
       .finally(() => setLoading(false));
   }, []);
 
@@ -43,12 +42,6 @@ export function CRM() {
         </Link>
       </div>
 
-      {error && (
-        <div className="crm-error" role="alert">
-          {error}
-        </div>
-      )}
-
       {loading && (
         <div className="crm-loading">
           <div className="spinner" />
@@ -56,7 +49,7 @@ export function CRM() {
         </div>
       )}
 
-      {!loading && !error && clientes.length === 0 && (
+      {!loading && clientes.length === 0 && (
         <div className="crm-empty">
           <p>No hay clientes registrados.</p>
           <Link to="/crm/nuevo" className="btn-primary">
@@ -65,7 +58,7 @@ export function CRM() {
         </div>
       )}
 
-      {!loading && !error && clientes.length > 0 && (
+      {!loading && clientes.length > 0 && (
         <div className="crm-grid">
           {clientes.map((c) => (
             <Link key={c.id} to={`/crm/${c.id}`} className="crm-card">
