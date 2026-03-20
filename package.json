@@ -15,6 +15,7 @@
     "db:migrate": "cd backend && npm run migration:run",
     "db:migrate:generate": "npm run migration:generate -w backend",
     "seed": "npm run seed -w backend",
+    "db:create-clientes": "node scripts/run-migration-clientes.js",
     "test": "npm run test -w backend && npm run test -w frontend",
     "test:backend": "npm run test -w backend",
     "test:frontend": "npm run test -w frontend",

@@ -1,0 +1,379 @@
+.crm {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.crm-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.crm-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.crm-sub {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.6rem 1.2rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+}
+
+.btn-secondary {
+  padding: 0.5rem 1rem;
+  background: #fff;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.2s;
+}
+
+.btn-secondary:hover {
+  border-color: var(--primary);
+}
+
+.crm-error {
+  padding: 0.75rem 1rem;
+  background: rgba(200, 16, 46, 0.08);
+  border: 1px solid rgba(200, 16, 46, 0.35);
+  border-radius: 10px;
+  color: var(--primary);
+  margin-bottom: 1rem;
+}
+
+.crm-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
+.crm-empty {
+  text-align: center;
+  padding: 3rem;
+}
+
+.crm-empty p {
+  margin-bottom: 1rem;
+  color: var(--text-muted);
+}
+
+.crm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.crm-card {
+  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.crm-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.crm-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.crm-card-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.crm-card-empresa {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.crm-card-email {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0 0 0.5rem;
+}
+
+.crm-card-producto {
+  font-size: 0.9rem;
+  margin: 0 0 0.25rem;
+}
+
+.crm-card-tarimas {
+  font-size: 0.85rem;
+  color: var(--primary);
+  margin: 0;
+}
+
+.crm-card-modelo {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.5rem;
+  background: var(--hover-bg);
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+/* Detalle */
+.crm-back {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  display: inline-block;
+}
+
+.crm-back:hover {
+  color: var(--primary);
+}
+
+.crm-detalle-header h1 {
+  font-size: 1.5rem;
+  margin: 0 0 1.5rem;
+}
+
+.crm-detalle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 900px) {
+  .crm-detalle-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.crm-form-section h2,
+.crm-chat-section h2,
+.crm-distribucion-section h2 {
+  font-size: 1.15rem;
+  margin: 0 0 0.75rem;
+}
+
+.crm-form label {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.crm-form label > input,
+.crm-form label > textarea {
+  display: block;
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.crm-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.crm-chat-sub,
+.crm-dist-sub {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0 0 0.75rem;
+}
+
+.crm-chat {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.crm-bubble {
+  max-width: 92%;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+}
+
+.crm-bubble--assistant {
+  align-self: flex-start;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+}
+
+.crm-bubble--user {
+  align-self: flex-end;
+  background: var(--text);
+  color: #fff;
+}
+
+.crm-bubble-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.8;
+  margin-bottom: 0.25rem;
+}
+
+.crm-chat-input {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.crm-chat-input textarea {
+  flex: 1;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  resize: vertical;
+  min-height: 52px;
+}
+
+.crm-chat-input button {
+  padding: 0.6rem 1rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-end;
+}
+
+.crm-chat-input button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.crm-chat-error {
+  padding: 0.5rem;
+  background: rgba(200, 16, 46, 0.1);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+}
+
+.crm-typing .dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.crm-typing .dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  animation: crm-dot 1.2s ease-in-out infinite;
+}
+
+.crm-typing .dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.crm-typing .dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes crm-dot {
+  0%, 80%, 100% {
+    opacity: 0.35;
+    transform: scale(0.9);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Distribución */
+.crm-distribucion-section {
+  grid-column: 1 / -1;
+}
+
+.crm-dist-result {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.crm-dist-ok {
+  color: #0a6;
+  font-weight: 500;
+  margin: 0 0 0.75rem;
+}
+
+.crm-dist-warn {
+  color: #c60;
+  font-weight: 500;
+  margin: 0 0 0.75rem;
+}
+
+.crm-dist-svg {
+  max-width: 100%;
+  overflow: auto;
+}
+
+.crm-dist-svg svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Nuevo */
+.crm-nuevo-header {
+  margin-bottom: 1.5rem;
+}
+
+.crm-form--nuevo {
+  max-width: 500px;
+}
+
+.crm-form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}

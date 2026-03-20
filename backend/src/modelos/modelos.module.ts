@@ -8,5 +8,6 @@ import { ModelosService } from './modelos.service';
   imports: [TypeOrmModule.forFeature([Modelo])],
   controllers: [ModelosController],
   providers: [ModelosService],
+  exports: [ModelosService],
 })
 export class ModelosModule {}

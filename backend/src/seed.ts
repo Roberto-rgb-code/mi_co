@@ -1,17 +1,18 @@
 /**
- * Seed inicial - ejecutar con: npx ts-node -r dotenv/config src/seed.ts
- * Inserta modelos de ejemplo desde el catálogo ELF/Forward
+ * Seed México - sincroniza catalog_data.json (precios oficiales México MY27) a PostgreSQL.
+ * Ejecutar: npm run seed (o desde backend: npx ts-node -r dotenv/config src/seed.ts)
  */
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import * as fs from 'fs';
 
-// Cargar .env (raíz o backend)
 dotenv.config();
 dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
 if (!process.env.DATABASE_URL) {
-  console.error('DATABASE_URL no encontrada. Crea .env en la raíz con DATABASE_URL.');
+  console.error('DATABASE_URL no encontrada. Crea .env con DATABASE_URL.');
   process.exit(1);
 }
 
@@ -25,30 +26,76 @@ const dataSource = new DataSource({
   synchronize: false,
 });
 
-const modelosSeed = [
-  { catalogo: 'ELF 100E', familia: 'ELF', nomenclatura: '100', precio: 766800, capacidadCarga: '1.8 T', kmPorLitro: '11 KM/LT' },
-  { catalogo: 'ELF 200E', familia: 'ELF', nomenclatura: '200', precio: 935100, capacidadCarga: '2.6 T', kmPorLitro: '10 KM/LT' },
-  { catalogo: 'ELF 300E', familia: 'ELF', nomenclatura: '300', precio: 1032100, capacidadCarga: '3.5 T', kmPorLitro: '9 KM/LT' },
-  { catalogo: 'ELF 400F', familia: 'ELF', nomenclatura: '400', precio: 1160200, capacidadCarga: '4 T', kmPorLitro: '7 KM/LT' },
-  { catalogo: 'ELF 500F', familia: 'ELF', nomenclatura: '500', precio: 1248100, capacidadCarga: '5 T', kmPorLitro: '6 KM/LT' },
-  { catalogo: 'ELF 600H', familia: 'ELF', nomenclatura: '600', precio: 1321300, capacidadCarga: '6 T', kmPorLitro: '6 KM/LT' },
-  { catalogo: 'FORWARD 800K', familia: 'FORWARD', nomenclatura: '800', precio: 1459800, capacidadCarga: '7 T', kmPorLitro: '5.5 KM/LT' },
-  { catalogo: 'FORWARD 1100L', familia: 'FORWARD', nomenclatura: '1100', precio: 1702800, capacidadCarga: '10 T', kmPorLitro: '4.5 KM/LT' },
-  { catalogo: 'FORWARD 1400Q', familia: 'FORWARD', nomenclatura: '1400', precio: 1830600, capacidadCarga: '12 T', kmPorLitro: '4.5 KM/LT' },
-];
+type CatalogModel = {
+  modelo?: string;
+  linea?: string;
+  precio?: number;
+  precio_2026?: number;
+  capacidad_carga?: string;
+  motor?: string;
+  hp?: string;
+  torque?: string;
+  garantia?: string;
+  km_litro?: string;
+  tecnologia?: string;
+  ano_modelo?: number;
+};
+
+function extractNomenclatura(catalogo: string): string {
+  const match = catalogo.match(/(\d+)/);
+  return match ? match[1] : catalogo.replace(/\D/g, '') || '0';
+}
 
 async function run() {
+  const base = path.resolve(__dirname, '..', '..');
+  const catalogPath = path.join(base, 'frontend', 'public', 'catalog_data.json');
+  if (!fs.existsSync(catalogPath)) {
+    console.error('No existe', catalogPath);
+    process.exit(1);
+  }
+  const raw = fs.readFileSync(catalogPath, 'utf-8');
+  const data = JSON.parse(raw) as { modelos?: Record<string, CatalogModel> };
+  const modelos = data.modelos || {};
+  if (Object.keys(modelos).length === 0) {
+    console.error('No hay modelos en catalog_data.json');
+    process.exit(1);
+  }
+
   await dataSource.initialize();
   const repo = dataSource.getRepository(Modelo);
-  for (const m of modelosSeed) {
-    const existing = await repo.findOne({ where: { catalogo: m.catalogo } });
-    if (!existing) {
-      await repo.save(m);
-      console.log('Inserted:', m.catalogo);
+  let upserted = 0;
+  for (const [key, m] of Object.entries(modelos)) {
+    const catalogo = (m.modelo || key).trim();
+    const familia = (m.linea || (catalogo.startsWith('ELF') ? 'ELF' : 'FORWARD')).toUpperCase();
+    const precio = typeof m.precio === 'number' ? m.precio : (m.precio_2026 as number) ?? 0;
+    if (precio <= 0) continue;
+
+    const payload = {
+      catalogo,
+      familia,
+      nomenclatura: extractNomenclatura(catalogo),
+      precio,
+      yearModelo: m.ano_modelo ?? 2026,
+      capacidadCarga: m.capacidad_carga || undefined,
+      motor: m.motor || undefined,
+      hp: m.hp || undefined,
+      torque: m.torque || undefined,
+      garantia: m.garantia || undefined,
+      kmPorLitro: m.km_litro || undefined,
+      tecnologia: m.tecnologia || undefined,
+    };
+
+    const existing = await repo.findOne({ where: { catalogo } });
+    if (existing) {
+      await repo.update(existing.id, payload);
+    } else {
+      await repo.save(repo.create(payload));
     }
+    upserted++;
+    console.log(upserted, catalogo);
   }
   await dataSource.destroy();
-  console.log('Seed completado.');
+  console.log(`Seed México: ${upserted} modelos sincronizados.`);
 }
 
 run().catch((e) => {

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { ModelosService } from '../modelos/modelos.service';
 
 export type ChatRole = 'user' | 'assistant';
 
@@ -126,8 +127,68 @@ export class AssistantService implements OnModuleInit {
   private catalogCompact = '';
   private catalogRows: CatalogRow[] = [];
 
-  onModuleInit() {
+  constructor(private readonly modelosService: ModelosService) {}
+
+  async onModuleInit() {
+    await this.loadCatalog();
+  }
+
+  /** Carga catálogo: prioridad DB, fallback JSON. Solo datos de México. */
+  private async loadCatalog(): Promise<void> {
+    try {
+      const dbRows = await this.modelosService.findAll();
+      if (dbRows && dbRows.length > 0) {
+        const rows = dbRows.map((m) => this.modeloToCatalogRow(m));
+        rows.sort((a, b) => a.modelo.localeCompare(b.modelo, 'es', { numeric: true }));
+        this.catalogRows = rows;
+        this.catalogSummary = this.buildSummary(rows);
+        this.catalogCompact = this.buildCompactTable(rows);
+        this.logger.log(`Catálogo asistente: ${rows.length} modelos desde base de datos (solo México)`);
+        return;
+      }
+    } catch (e) {
+      this.logger.warn(`No se pudo cargar catálogo desde DB: ${e}`);
+    }
     this.loadCatalogFromDisk();
+  }
+
+  private modeloToCatalogRow(m: {
+    catalogo: string;
+    familia: string;
+    precio: number;
+    capacidadCarga?: string | null;
+    motor?: string | null;
+    hp?: string | null;
+    torque?: string | null;
+    garantia?: string | null;
+    kmPorLitro?: string | null;
+    tecnologia?: string | null;
+    yearModelo?: number;
+  }): CatalogRow {
+    const modelo = (m.catalogo || '').trim();
+    const linea = (m.familia || '').trim();
+    const searchBlob = [modelo, linea, m.capacidadCarga || '', m.kmPorLitro || '', m.motor || '', m.hp || '', m.torque || '', m.tecnologia || '', m.garantia || '']
+      .join(' ')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/\p{M}/gu, '');
+    return {
+      key: modelo,
+      modelo,
+      linea,
+      precio: typeof m.precio === 'number' ? m.precio : null,
+      precio_2026: typeof m.precio === 'number' ? m.precio : null,
+      precio_2025: null,
+      capacidad_carga: String(m.capacidadCarga || '').trim(),
+      km_litro: String(m.kmPorLitro || '').trim(),
+      motor: String(m.motor || '').trim(),
+      hp: String(m.hp || '').trim(),
+      torque: String(m.torque || '').trim(),
+      garantia: String(m.garantia || '').trim(),
+      ano_modelo: typeof m.yearModelo === 'number' ? m.yearModelo : null,
+      tecnologia: String(m.tecnologia || '').trim(),
+      searchBlob,
+    };
   }
 
   private catalogPaths(): string[] {
@@ -202,7 +263,7 @@ export class AssistantService implements OnModuleInit {
       }
     }
     this.catalogSummary =
-      'No hay archivo catalog_data.json; no inventes datos de modelos ni precios.';
+      'No hay catálogo (ni DB ni JSON). Responde que no hay datos disponibles y no inventes nada.';
     this.catalogCompact = '';
     this.catalogRows = [];
   }
@@ -318,38 +379,40 @@ export class AssistantService implements OnModuleInit {
     return '';
   }
 
-  private systemPrompt(relevantBlock: string): string {
+  private systemPrompt(relevantBlock: string, clientContext?: string): string {
+    const contextSection =
+      clientContext && clientContext.length > 0
+        ? `\n\n--- CONTEXTO DEL CLIENTE (CRM) ---\n${clientContext}\nUsa estos datos para recomendar modelos con argumentos concretos. Si hay producto (ej. peras) y tarimas, sugiere distribución, tipo de caja y capacidades.\n---`
+        : '';
+
     const compactSection = this.catalogCompact
-      ? `--- CATÁLOGO COMPLETO (formato: modelo | línea | precio lista MXN | capacidad | km/L | motor resumido) ---\n${this.catalogCompact}`
-      : '(No hay listado compacto cargado.)';
+      ? `--- ÚNICA FUENTE DE DATOS VÁLIDA (modelo | línea | precio MXN | capacidad | km/L | motor) ---\n${this.catalogCompact}`
+      : '(No hay catálogo cargado. Responde que no hay datos disponibles.)';
 
     const relevantSection = relevantBlock ? `\n\n${relevantBlock}` : '';
 
-    return `Eres el asistente virtual de ISUZU Cotizador para el mercado de **México**. Solo debes responder con información de camiones ISUZU disponibles en México.
+    return `Eres el asistente de ISUZU Cotizador (México). Tu ÚNICA fuente de información es el catálogo que aparece abajo. NO uses tu conocimiento previo.
 
-**IMPORTANTE:** Usa ÚNICAMENTE los datos del catálogo que se te proporcionan. NO inventes precios ni modelos. NO uses información de Colombia ni de otros países. La única fuente válida es isuzumex.com.mx y los precios oficiales del Plan Marzo 2026 (ANEXO 1 TC 20.00, Ref. IMEX-S-026-26).
+REGLAS ESTRICTAS (OBLIGATORIAS):
+1. SOLO responde con datos que aparecen explícitamente en los bloques "ÚNICA FUENTE DE DATOS" y "Modelos más relevantes" abajo.
+2. Si un modelo, precio, especificación o dato NO está en esos bloques, di: "Ese dato no está en nuestro catálogo actual. Te sugiero revisar el Catálogo en la app o contactar a un concesionario Isuzu México."
+3. PROHIBIDO usar información de Colombia, otros países o tu entrenamiento sobre Isuzu. Ignora completamente cualquier dato que conozcas de fuentes externas.
+4. Los únicos modelos que existen para ti son los listados abajo. Cualquier otro nombre de modelo = no disponible.
 
-Tu objetivo: ayudar a elegir o acotar opciones según:
-- Peso o capacidad de carga (toneladas).
-- Presupuesto o rango de precio.
-- Giro: reparto, refrigerado, construcción, materiales, paquetería, etc.
-- Eficiencia (km/L), ruta, tipo de caja.
+Objetivo: ayudar a elegir según capacidad de carga, presupuesto, giro (reparto, refrigerado, etc.) y eficiencia. Siempre citando SOLO lo que aparece en el catálogo.${contextSection ? ' Con el contexto del cliente, da recomendaciones específicas con argumentos (distribución de tarimas, tipo de camión, capacidad).' : ''}
 
-**Fuente de datos:** El bloque "CATÁLOGO COMPLETO" y "Modelos más relevantes" contienen datos de México (precios sugeridos con IVA e ISAN, Plan Marzo 2026).
-- Cita **precios, capacidades, motor, km/L, garantía** tal como aparecen ahí. Los precios son en MXN.
-- Si el usuario pide un modelo que **no** aparece en esos bloques, no inventes: dilo y sugiere revisar el Catálogo en la app o reformular.
-- No prometas disponibilidad, entrega ni condiciones comerciales finales: remite a asesor o concesionario Isuzu México.
+Estilo: español (México), profesional, breve. Si no hay dato, dilo claramente.
 
-Estilo: español (México), profesional, listas breves con viñetas cuando ayude.
-
-Resumen del catálogo:
+Resumen:
 ${this.catalogSummary}
 
 ${compactSection}
-${relevantSection}`;
+${relevantSection}
+
+(Recuerda: solo datos de arriba. Cero invención. Cero Colombia.)`;
   }
 
-  async completeChat(history: ChatMessage[]): Promise<string> {
+  async completeChat(history: ChatMessage[], clientContext?: string): Promise<string> {
     const apiKey = process.env.OPENAI_API_KEY?.trim();
     if (!apiKey) {
       throw new ServiceUnavailableException(
@@ -367,11 +430,11 @@ ${relevantSection}`;
     }
 
     const lastUser = this.lastUserMessage(trimmed);
-    const relevant = this.pickRelevantModels(lastUser);
+    const relevant = this.pickRelevantModels(lastUser + (clientContext || ''));
     const relevantBlock = this.formatRelevantBlock(relevant);
 
     const messages = [
-      { role: 'system' as const, content: this.systemPrompt(relevantBlock) },
+      { role: 'system' as const, content: this.systemPrompt(relevantBlock, clientContext) },
       ...trimmed.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
     ];
 
@@ -384,7 +447,7 @@ ${relevantSection}`;
       body: JSON.stringify({
         model,
         messages,
-        temperature: 0.55,
+        temperature: 0.2,
         max_tokens: 1400,
       }),
     });

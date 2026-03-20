@@ -9,7 +9,7 @@
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d ./src/config/data-source.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d ./src/config/data-source.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d ./src/config/data-source.ts",
-    "seed": "ts-node src/seed.ts",
+    "seed": "ts-node -r dotenv/config src/seed.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage"

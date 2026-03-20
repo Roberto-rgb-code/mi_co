@@ -7,7 +7,14 @@ export class AssistantController {
 
   @Post('chat')
   @HttpCode(200)
-  async chat(@Body() body: { messages?: ChatMessage[] }) {
+  async chat(
+    @Body()
+    body: {
+      messages?: ChatMessage[];
+      /** Contexto del cliente CRM: producto, tarimas, requerimientos. El asistente lo usa para recomendar con argumentos. */
+      clientContext?: string;
+    },
+  ) {
     const messages = Array.isArray(body?.messages) ? body.messages : [];
     const sanitized: ChatMessage[] = messages
       .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
@@ -17,7 +24,10 @@ export class AssistantController {
       }))
       .slice(-20);
 
-    const reply = await this.assistant.completeChat(sanitized);
+    const clientContext =
+      typeof body?.clientContext === 'string' ? body.clientContext.trim().slice(0, 2000) : undefined;
+
+    const reply = await this.assistant.completeChat(sanitized, clientContext);
     return { reply };
   }
 }
