@@ -6,7 +6,12 @@ import './Cotizador.css';
 
 interface CatalogPayload {
   modelos: Record<string, ModeloCatalog>;
-  fuentes?: { elf?: string | null; forward?: string | null; cubicaje?: string | null };
+  fuentes?: {
+    elf?: string | null;
+    forward?: string | null;
+    cubicaje?: string | null;
+    precios_mexico?: string | null;
+  };
 }
 
 function sortModelosParaCotizador(list: ModeloCatalog[]): ModeloCatalog[] {
