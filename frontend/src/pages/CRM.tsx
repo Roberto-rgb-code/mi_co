@@ -27,9 +27,9 @@ export function CRM() {
 
   useEffect(() => {
     fetch('/api/clientes')
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('Error al cargar'))))
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`Error ${r.status}`))))
       .then(setClientes)
-      .catch(() => setError('No se pudieron cargar los clientes'))
+      .catch(() => setError('No se pudieron cargar los clientes. Revisa el deploy y que la tabla clientes exista en la base de datos.'))
       .finally(() => setLoading(false));
   }, []);
 

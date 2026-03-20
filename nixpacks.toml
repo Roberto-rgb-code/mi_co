@@ -9,4 +9,4 @@ cmds = ["npm install"]
 cmds = ["npm run frontend:build", "npm run backend:build"]
 
 [start]
-cmd = "cd backend && node dist/main.js"
+cmd = "npm run db:create-clientes && cd backend && node dist/main.js"
