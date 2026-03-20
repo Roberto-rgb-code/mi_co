@@ -18,6 +18,7 @@
   "ELF 600K": "/images/ELF_400_500_600.png",
   "ELF 600M": "/images/ELF_400_500_600.png",
   "ELF 600M+": "/images/ELF_400_500_600.png",
+  "ELF 600 BUS": "/images/ELF_400_500_600.png",
   "FORWARD 800K": "/images/FORWARD_800.png",
   "FORWARD 800M": "/images/FORWARD_800.png",
   "FORWARD 1100L": "/images/FORWARD_1100.png",
@@ -25,5 +26,7 @@
   "FORWARD 1100Q": "/images/FORWARD_1100.png",
   "FORWARD 1400K": "/images/FORWARD_1400.png",
   "FORWARD 1400M": "/images/FORWARD_1400.png",
-  "FORWARD 1400Q": "/images/FORWARD_1400.png"
+  "FORWARD 1400Q": "/images/FORWARD_1400.png",
+  "FORWARD 1800T": "/images/FORWARD_1400.png",
+  "FORWARD 2000T": "/images/FORWARD_1400.png"
 }

@@ -94,14 +94,23 @@ export function Cotizador() {
         <div>
           <h1>Cotizador</h1>
           <p className="cotizador-lead">
-            Selecciona un modelo para ver el resumen. Los datos corresponden a la hoja{' '}
-            <strong>DATOS 2</strong> y precios de <strong>DATOS1</strong> del archivo de cotización
-            Isuzu (Chasis Cabina 2026).
+            Selecciona un modelo para ver el resumen. Precios sugeridos a la venta con IVA e ISAN
+            (Plan Marzo 2026, ANEXO 1 TC 20.00). Fuente:{' '}
+            <a href="https://www.isuzumex.com.mx/" target="_blank" rel="noopener noreferrer">
+              isuzumex.com.mx
+            </a>
+            .
           </p>
         </div>
-        {fuentes?.elf && (
+        {(fuentes?.precios_mexico || fuentes?.elf) && (
           <p className="cotizador-fuente" title="Origen de extracción">
-            Fuente ELF: <span>{fuentes.elf}</span>
+            {fuentes.precios_mexico && <span>{fuentes.precios_mexico}</span>}
+            {fuentes.elf && (
+              <>
+                {fuentes.precios_mexico && <br />}
+                ELF: <span>{fuentes.elf}</span>
+              </>
+            )}
             {fuentes.forward && (
               <>
                 <br />
