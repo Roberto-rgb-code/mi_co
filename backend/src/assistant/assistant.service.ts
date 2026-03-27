@@ -8,6 +8,7 @@ import {
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { ModelosService } from '../modelos/modelos.service';
+import { CarroceriasService } from '../carrocerias/carrocerias.service';
 
 export type ChatRole = 'user' | 'assistant';
 
@@ -128,12 +129,42 @@ export class AssistantService implements OnModuleInit {
   private catalogRows: CatalogRow[] = [];
   /** Tipos de carrocería (referencia Carrocerías López) para cruzar con producto del cliente */
   private carroceriasCompact = '';
+  /** Tipos de caja con imagen y acomodamiento (tabla carrocerias_tipo) */
+  private carroceriasTiposBlock = '';
 
-  constructor(private readonly modelosService: ModelosService) {}
+  constructor(
+    private readonly modelosService: ModelosService,
+    private readonly carroceriasService: CarroceriasService,
+  ) {}
 
   async onModuleInit() {
     await this.loadCatalog();
     this.loadCarroceriasFromDisk();
+    await this.loadCarroceriasTiposFromDb();
+  }
+
+  private async loadCarroceriasTiposFromDb(): Promise<void> {
+    try {
+      const rows = await this.carroceriasService.findAll();
+      if (!rows.length) {
+        this.logger.warn('carrocerias_tipo vacío; el asistente no mostrará imágenes de tipos de caja hasta migrar.');
+        return;
+      }
+      const parts = rows.map((r) => {
+        return (
+          `### ${r.nombre} (slug: ${r.slug})\n` +
+          `Línea obligatoria si recomiendas este tipo (el cliente verá la imagen en el chat):\n` +
+          `![${r.nombre}](${r.imagenUrl})\n` +
+          `- Uso típico: ${r.usoTipico || '—'}\n` +
+          `- Acomodamiento del producto: ${r.acomodamiento || '—'}\n` +
+          `- Descripción: ${r.descripcion || '—'}`
+        );
+      });
+      this.carroceriasTiposBlock = parts.join('\n\n');
+      this.logger.log(`Carrocerías con imagen: ${rows.length} tipos`);
+    } catch (e) {
+      this.logger.warn(`No se pudo cargar carrocerias_tipo: ${e}`);
+    }
   }
 
   /** Carga catálogo: prioridad DB, fallback JSON. Solo datos de México. */
@@ -441,6 +472,14 @@ export class AssistantService implements OnModuleInit {
       ? `\n\n--- TIPOS DE CARROCERÍA (referencia Carrocerías López) — no son precios ISUZU ---\n${this.carroceriasCompact}\n---`
       : '';
 
+    const tiposCajaImagenSection = this.carroceriasTiposBlock
+      ? `\n\n--- TIPOS DE CAJA CON IMAGEN (base de datos) — recomienda según producto del cliente ---\n` +
+        `Cuando elijas entre **caja seca**, **redilas** o **plataforma**, DEBES:\n` +
+        `1) Incluir la línea Markdown ![nombre](url) del tipo que recomiendes (copiada tal cual de abajo) para que el usuario vea la imagen en el chat.\n` +
+        `2) Explicar el acomodamiento del producto adaptando el texto de "Acomodamiento" a lo que pidió el cliente (peso, tarimas, refrigerado, etc.).\n` +
+        `${this.carroceriasTiposBlock}\n---`
+      : '';
+
     const relevantSection = relevantBlock ? `\n\n${relevantBlock}` : '';
 
     return `Eres el asistente de ISUZU Cotizador (México). Combina el catálogo ISUZU con la referencia de tipos de carrocería cuando el cliente diga qué producto o giro transportará.
@@ -463,11 +502,12 @@ Estilo: español (México), profesional, breve.
 Resumen:
 ${this.catalogSummary}
 ${carroceriasSection}
+${tiposCajaImagenSection}
 
 ${compactSection}
 ${relevantSection}
 
-(Recuerda: ISUZU = solo catálogo. Carrocería = referencia López. Cero Colombia.)`;
+(Recuerda: ISUZU = solo catálogo. Carrocería = referencia López + imágenes de caja si aplica. Cero Colombia.)`;
   }
 
   async completeChat(history: ChatMessage[], clientContext?: string): Promise<string> {
@@ -506,7 +546,7 @@ ${relevantSection}
         model,
         messages,
         temperature: 0.2,
-        max_tokens: 1400,
+        max_tokens: 1800,
       }),
     });
 

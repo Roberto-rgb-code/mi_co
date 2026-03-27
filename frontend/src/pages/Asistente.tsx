@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { AssistantMarkdown } from '../components/AssistantMarkdown';
 import './Asistente.css';
 
 type Role = 'user' | 'assistant';
@@ -12,7 +13,7 @@ interface Msg {
 const WELCOME: Msg = {
   role: 'assistant',
   content:
-    '¡Hola! Soy el asistente de **ISUZU Cotizador**. Puedo orientarte según la **carga** que necesitas (toneladas), tu **presupuesto**, el **giro** (reparto, construcción, refrigerado, materiales, etc.) y el tipo de ruta.\n\nCuéntame qué buscas o qué vas a transportar y te sugiero por dónde empezar. Para **precios y fichas exactas** usa el **Cotizador** o el **Catálogo**.',
+    '¡Hola! Soy el asistente de **ISUZU Cotizador**. Puedo orientarte según **qué producto o material vas a cargar**, la **carga** (toneladas), **tipo de caja** (caja seca, redilas, plataforma… con imagen de referencia), **presupuesto** y ruta.\n\nCuéntame qué transportarás y te sugiero modelo del catálogo y cómo acomodar la carga. Para **precios exactos** usa el **Cotizador** o el **Catálogo**.',
 };
 
 export function Asistente() {
@@ -139,33 +140,5 @@ export function Asistente() {
         <code>OPENAI_MODEL</code> por defecto <code>gpt-4o-mini</code>.
       </p>
     </div>
-  );
-}
-
-/** Markdown mínimo **negrita** y saltos de línea */
-function AssistantMarkdown({ text }: { text: string }) {
-  const lines = text.split('\n');
-  return (
-    <>
-      {lines.map((line, i) => (
-        <p key={i}>
-          <LineWithBold text={line || '\u00a0'} />
-        </p>
-      ))}
-    </>
-  );
-}
-
-function LineWithBold({ text }: { text: string }) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return (
-    <>
-      {parts.map((part, j) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return <strong key={j}>{part.slice(2, -2)}</strong>;
-        }
-        return <span key={j}>{part}</span>;
-      })}
-    </>
   );
 }

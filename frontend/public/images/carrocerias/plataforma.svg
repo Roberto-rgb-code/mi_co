@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 140" width="320" height="140">
+  <rect width="320" height="140" fill="#f5f5f5"/>
+  <text x="160" y="22" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#333">Plataforma / rampa</text>
+  <rect x="20" y="45" width="70" height="50" rx="4" fill="#fff" stroke="#c8102e" stroke-width="2"/>
+  <polygon points="95,95 285,95 295,105 95,105" fill="#ddd" stroke="#333" stroke-width="2"/>
+  <line x1="95" y1="95" x2="285" y2="95" stroke="#333" stroke-width="2"/>
+  <circle cx="115" cy="105" r="12" fill="#333"/><circle cx="255" cy="105" r="12" fill="#333"/>
+  <text x="160" y="128" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#666">Reemplaza por tu captura: plataforma.png</text>
+</svg>

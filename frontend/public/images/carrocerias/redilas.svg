@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 140" width="320" height="140">
+  <rect width="320" height="140" fill="#f5f5f5"/>
+  <text x="160" y="22" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#333">Redilas</text>
+  <rect x="20" y="45" width="70" height="50" rx="4" fill="#fff" stroke="#c8102e" stroke-width="2"/>
+  <rect x="95" y="50" width="200" height="45" fill="none" stroke="#333" stroke-width="2"/>
+  <line x1="105" y1="58" x2="285" y2="58" stroke="#999" stroke-width="1.5"/><line x1="105" y1="70" x2="285" y2="70" stroke="#999" stroke-width="1.5"/>
+  <line x1="105" y1="82" x2="285" y2="82" stroke="#999" stroke-width="1.5"/>
+  <circle cx="115" cy="105" r="12" fill="#333"/><circle cx="255" cy="105" r="12" fill="#333"/>
+  <text x="160" y="128" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#666">Reemplaza por tu captura: redilas.png</text>
+</svg>

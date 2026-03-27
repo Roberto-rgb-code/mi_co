@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { ModelosModule } from './modelos/modelos.module';
 import { AssistantModule } from './assistant/assistant.module';
 import { ClientesModule } from './clientes/clientes.module';
+import { CarroceriasModule } from './carrocerias/carrocerias.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ClientesModule } from './clientes/clientes.module';
     ModelosModule,
     AssistantModule,
     ClientesModule,
+    CarroceriasModule,
   ],
   controllers: [AppController],
 })

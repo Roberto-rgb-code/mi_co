@@ -20,8 +20,9 @@ async function run() {
   await client.connect();
   await client.query('DROP TABLE IF EXISTS clientes CASCADE');
   await client.query('DROP TABLE IF EXISTS modelos CASCADE');
+  await client.query('DROP TABLE IF EXISTS carrocerias_tipo CASCADE');
   await client.end();
-  console.log('Tablas clientes y modelos eliminadas.');
+  console.log('Tablas clientes, modelos y carrocerias_tipo eliminadas.');
 }
 
 run().catch((e) => {

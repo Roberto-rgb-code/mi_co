@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import type { ClienteDto } from './CRM';
+import { AssistantMarkdown } from '../components/AssistantMarkdown';
 import './CRM.css';
 
 type Role = 'user' | 'assistant';
@@ -8,33 +9,6 @@ type Role = 'user' | 'assistant';
 interface Msg {
   role: Role;
   content: string;
-}
-
-function LineWithBold({ text }: { text: string }) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return (
-    <>
-      {parts.map((part, j) =>
-        part.startsWith('**') && part.endsWith('**') ? (
-          <strong key={j}>{part.slice(2, -2)}</strong>
-        ) : (
-          <span key={j}>{part}</span>
-        ),
-      )}
-    </>
-  );
-}
-
-function AssistantMarkdown({ text }: { text: string }) {
-  return (
-    <>
-      {text.split('\n').map((line, i) => (
-        <p key={i}>
-          <LineWithBold text={line || '\u00a0'} />
-        </p>
-      ))}
-    </>
-  );
 }
 
 export function ClienteDetalle() {

@@ -1,0 +1,21 @@
+.assistant-md-p {
+  margin: 0 0 0.5rem;
+}
+
+.assistant-md-p:last-child {
+  margin-bottom: 0;
+}
+
+.assistant-md-img {
+  display: block;
+  max-width: min(100%, 420px);
+  height: auto;
+  margin: 0.5rem 0;
+  border-radius: 10px;
+  border: 1px solid var(--border, #e0e0e0);
+  background: #fafafa;
+}
+
+.crm-bubble-text .assistant-md-img {
+  max-width: min(100%, 380px);
+}
