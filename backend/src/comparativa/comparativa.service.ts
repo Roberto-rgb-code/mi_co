@@ -25,9 +25,13 @@ export type ComparativaFila = {
 
 export type ComparativaResponse = {
   intro: string;
+  /** Párrafo(s) con características del competidor; orientativo, no ficha oficial. */
+  fichaCompetidor: string;
   modelosIsuzu: Modelo[];
   resumenCompetidor: ComparativaResumenCompetidor;
   filas: ComparativaFila[];
+  /** Por qué ISUZU destaca frente a ese competidor (ventas, sin inventar precios ISUZU). */
+  conclusionIsuzu: string;
 };
 
 @Injectable()
@@ -70,24 +74,37 @@ export class ComparativaService {
     const system = `Eres un asesor comercial de ISUZU México. El usuario indicará un camión de la competencia (otra marca).
 Debes elegir de 1 a 3 modelos ISUZU del catálogo proporcionado que mejor se comparen por segmento, tonelaje y uso.
 IMPORTANTE: en "modelos_catalogo" solo puedes usar valores de "catalogo" que existan EXACTAMENTE en el JSON "disponibles" (misma ortografía y espacios).
+
+COMPETIDOR — completa bien "resumen_competidor" y "ficha_competidor":
+- Si el usuario nombra un modelo concreto (ej. Hyundai Mighty QT500, Mercedes Atego, Hino 300, Freightliner, etc.), usa conocimiento general de especificaciones típicas de ese modelo o familia en camión mediano/liviano (México o mercados equivalentes). Da rangos o valores típicos y añade "(orientativo)" cuando sea estimación.
+- Evita dejar "N/D" en cascada: solo úsalo si realmente no hay base para estimar. Para PVB, motor, hp/torque, km/L y dimensiones, prioriza un rango razonable del segmento.
+- Precio competidor: nunca un número exacto inventado; usa "desde ~X MXN (orientativo)", "rango aproximado … (orientativo)" o "N/D" si no hay referencia.
+- "ficha_competidor": 4-8 frases en español (México) resumiendo motor, segmento, uso típico, fortalezas percibidas del competidor y limitaciones comunes; todo como información orientativa.
+
+CONCLUSIÓN ISUZU — "conclusion_isuzu":
+- 180-450 palabras en español (México). Puede usar saltos de línea y líneas que empiecen con "- " para viñetas.
+- Explica por qué ISUZU destaca frente a ESE competidor: durabilidad, costo total de operación, red de servicio, respaldo de marca, tecnología de los modelos elegidos (sin inventar precios ISUZU: los precios vienen del catálogo en el sistema).
+- Tono profesional, no denigrar al competidor; argumentar con valor.
+
 Responde SOLO un JSON válido con esta forma exacta (sin markdown):
 {
   "modelos_catalogo": ["string"],
-  "intro": "2-4 frases en español (México): por qué estos ISUZU son alternativas razonables frente al competidor.",
+  "intro": "2-4 frases: contexto de la comparación.",
+  "ficha_competidor": "string",
   "resumen_competidor": {
-    "nombre": "cómo identificas el vehículo competidor",
-    "precio": "estimación o N/D si no hay dato público confiable",
-    "capacidad_carga": "texto corto o N/D",
-    "pvb": "texto o N/D",
-    "motor": "texto o N/D",
-    "hp_torque": "texto o N/D",
-    "rendimiento": "km/L u otro dato público o N/D",
-    "dimensiones_aplicacion": "dimensiones de caja/cargo si las conoces, o N/D",
-    "garantia": "texto o N/D",
-    "tecnologia": "Euro, etc. o N/D"
-  }
-}
-No inventes precios exactos del competidor: si no estás seguro, pon "N/D" o "orientativo (verificar con distribuidor)".`;
+    "nombre": "identificación del vehículo competidor",
+    "precio": "texto orientativo o N/D",
+    "capacidad_carga": "texto",
+    "pvb": "texto orientativo",
+    "motor": "texto orientativo",
+    "hp_torque": "texto orientativo",
+    "rendimiento": "texto orientativo",
+    "dimensiones_aplicacion": "texto orientativo",
+    "garantia": "texto orientativo",
+    "tecnologia": "texto orientativo"
+  },
+  "conclusion_isuzu": "string"
+}`;
 
     const user = `Camión de la competencia (texto libre):\n"""${texto}"""\n\nModelos ISUZU disponibles (elige solo "catalogo" de esta lista):\n${JSON.stringify(compacto, null, 0)}`;
 
@@ -100,7 +117,7 @@ No inventes precios exactos del competidor: si no estás seguro, pon "N/D" o "or
       body: JSON.stringify({
         model,
         temperature: 0.15,
-        max_tokens: 1200,
+        max_tokens: 2800,
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: system },
@@ -126,6 +143,8 @@ No inventes precios exactos del competidor: si no estás seguro, pon "N/D" o "or
     let parsed: {
       modelos_catalogo?: string[];
       intro?: string;
+      ficha_competidor?: string;
+      conclusion_isuzu?: string;
       resumen_competidor?: Partial<ComparativaResumenCompetidor>;
     };
     try {
@@ -162,11 +181,22 @@ No inventes precios exactos del competidor: si no estás seguro, pon "N/D" o "or
       String(parsed.intro || '').trim() ||
       `Comparativa orientativa entre el vehículo indicado y ${seleccion.map((m) => m.catalogo).join(', ')} del catálogo ISUZU México.`;
 
+    const fichaCompetidor =
+      String(parsed.ficha_competidor || '').trim() ||
+      `Características del competidor (${resumen.nombre}): datos orientativos según el segmento; confirma especificaciones con el distribuidor de la marca.`;
+
+    const catalogosStr = seleccion.map((m) => m.catalogo).join(', ');
+    const conclusionIsuzu =
+      String(parsed.conclusion_isuzu || '').trim() ||
+      `ISUZU ofrece en ${catalogosStr} alternativas alineadas al segmento, con respaldo de red de servicio y especificaciones verificables en este catálogo. Contrasta el costo total de operación y la garantía frente al competidor indicado, validando siempre en concesionario.`;
+
     return {
       intro,
+      fichaCompetidor,
       modelosIsuzu: seleccion,
       resumenCompetidor: resumen,
       filas,
+      conclusionIsuzu,
     };
   }
 

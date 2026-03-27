@@ -17,11 +17,13 @@ type ModeloResp = {
 
 type ComparativaData = {
   intro: string;
+  fichaCompetidor: string;
   modelosIsuzu: ModeloResp[];
   resumenCompetidor: {
     nombre: string;
   };
   filas: ComparativaFila[];
+  conclusionIsuzu: string;
 };
 
 export function Comparativa() {
@@ -103,6 +105,13 @@ export function Comparativa() {
             </p>
           </div>
 
+          {data.fichaCompetidor && (
+            <section className="comparativa-ficha" aria-labelledby="ficha-comp-title">
+              <h3 id="ficha-comp-title">Características del competidor (orientativo)</h3>
+              <p className="comparativa-ficha-text">{data.fichaCompetidor}</p>
+            </section>
+          )}
+
           <div className="comparativa-table-wrap">
             <table className="comparativa-table">
               <thead>
@@ -134,6 +143,13 @@ export function Comparativa() {
             Los valores ISUZU corresponden al catálogo cargado en esta herramienta. La columna del competidor puede
             contener estimaciones o N/D; confirma siempre con el distribuidor de la marca correspondiente.
           </p>
+
+          {data.conclusionIsuzu && (
+            <section className="comparativa-conclusion" aria-labelledby="conclusion-isuzu-title">
+              <h3 id="conclusion-isuzu-title">Conclusión: por qué destaca ISUZU</h3>
+              <div className="comparativa-conclusion-text">{data.conclusionIsuzu}</div>
+            </section>
+          )}
         </div>
       )}
     </div>
