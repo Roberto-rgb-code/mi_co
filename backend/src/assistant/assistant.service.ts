@@ -126,11 +126,14 @@ export class AssistantService implements OnModuleInit {
   private catalogSummary = '';
   private catalogCompact = '';
   private catalogRows: CatalogRow[] = [];
+  /** Tipos de carrocería (referencia Carrocerías López) para cruzar con producto del cliente */
+  private carroceriasCompact = '';
 
   constructor(private readonly modelosService: ModelosService) {}
 
   async onModuleInit() {
     await this.loadCatalog();
+    this.loadCarroceriasFromDisk();
   }
 
   /** Carga catálogo: prioridad DB, fallback JSON. Solo datos de México. */
@@ -196,6 +199,51 @@ export class AssistantService implements OnModuleInit {
       join(__dirname, '..', '..', 'frontend', 'dist', 'catalog_data.json'),
       join(__dirname, '..', '..', 'frontend', 'public', 'catalog_data.json'),
     ];
+  }
+
+  private carroceriasPaths(): string[] {
+    return [
+      join(__dirname, '..', '..', 'frontend', 'dist', 'carrocerias_lopez.json'),
+      join(__dirname, '..', '..', 'frontend', 'public', 'carrocerias_lopez.json'),
+    ];
+  }
+
+  /** Referencia de tipos de carrocería (Carrocerías López) — no sustituye datos ISUZU */
+  private loadCarroceriasFromDisk(): void {
+    for (const p of this.carroceriasPaths()) {
+      if (!existsSync(p)) continue;
+      try {
+        const raw = readFileSync(p, 'utf-8');
+        const data = JSON.parse(raw) as {
+          _fuente?: string;
+          _url?: string;
+          instruccion_asistente?: string;
+          categorias?: Array<{ nombre: string; productos: Array<{ nombre: string; uso: string; carroceria: string; tonelaje_orientativo: string }> }>;
+          palabras_clave_a_carroceria?: Array<{ palabras: string[]; sugiere: string }>;
+        };
+        const lines: string[] = [];
+        if (data.instruccion_asistente) lines.push(data.instruccion_asistente);
+        if (data._url) lines.push(`Fuente tipos de carrocería: ${data._url}`);
+        for (const cat of data.categorias || []) {
+          lines.push(`\n## ${cat.nombre}`);
+          for (const pr of cat.productos || []) {
+            lines.push(`- ${pr.nombre}: ${pr.uso} → ${pr.carroceria}. Orientación tonelaje ISUZU: ${pr.tonelaje_orientativo}`);
+          }
+        }
+        if (data.palabras_clave_a_carroceria?.length) {
+          lines.push('\n## Palabras clave → tipo de carrocería');
+          for (const k of data.palabras_clave_a_carroceria) {
+            lines.push(`- ${k.palabras.join(', ')} → ${k.sugiere}`);
+          }
+        }
+        this.carroceriasCompact = lines.join('\n').slice(0, 12_000);
+        this.logger.log(`Carrocerías referencia cargada desde ${p}`);
+        return;
+      } catch (e) {
+        this.logger.warn(`No se pudo leer carrocerias_lopez.json en ${p}: ${e}`);
+      }
+    }
+    this.carroceriasCompact = '';
   }
 
   private loadCatalogFromDisk(): void {
@@ -389,27 +437,37 @@ export class AssistantService implements OnModuleInit {
       ? `--- ÚNICA FUENTE DE DATOS VÁLIDA (modelo | línea | precio MXN | capacidad | km/L | motor) ---\n${this.catalogCompact}`
       : '(No hay catálogo cargado. Responde que no hay datos disponibles.)';
 
+    const carroceriasSection = this.carroceriasCompact
+      ? `\n\n--- TIPOS DE CARROCERÍA (referencia Carrocerías López) — no son precios ISUZU ---\n${this.carroceriasCompact}\n---`
+      : '';
+
     const relevantSection = relevantBlock ? `\n\n${relevantBlock}` : '';
 
-    return `Eres el asistente de ISUZU Cotizador (México). Tu ÚNICA fuente de información es el catálogo que aparece abajo. NO uses tu conocimiento previo.
+    return `Eres el asistente de ISUZU Cotizador (México). Combina el catálogo ISUZU con la referencia de tipos de carrocería cuando el cliente diga qué producto o giro transportará.
+
+FLUJO CON CLIENTE (CRM o chat general):
+- Si aún no sabes qué cargará o qué giro tiene, pregúntalo antes de recomendar modelo.
+- Cruza el producto/giro con el bloque "TIPOS DE CARROCERÍA" (ej. frutas → frutera/refrigerada; refrigerados → caja refrigerada).
+- Recomienda modelos ISUZU usando SOLO el bloque de catálogo (precios, capacidad_ton, km/L). Para "distancia" o autonomía de ruta: si el catálogo trae km/L, puedes explicar que el rendimiento orientativo está en esos datos; no inventes litros de tanque si no aparecen en el catálogo.
 
 REGLAS ESTRICTAS (OBLIGATORIAS):
-1. SOLO responde con datos que aparecen explícitamente en los bloques "ÚNICA FUENTE DE DATOS" y "Modelos más relevantes" abajo.
-2. Si un modelo, precio, especificación o dato NO está en esos bloques, di: "Ese dato no está en nuestro catálogo actual. Te sugiero revisar el Catálogo en la app o contactar a un concesionario Isuzu México."
-3. PROHIBIDO usar información de Colombia, otros países o tu entrenamiento sobre Isuzu. Ignora completamente cualquier dato que conozcas de fuentes externas.
-4. Los únicos modelos que existen para ti son los listados abajo. Cualquier otro nombre de modelo = no disponible.
+1. Modelos, precios y especificaciones de camión ISUZU: SOLO los que aparecen en "ÚNICA FUENTE DE DATOS" y "Modelos más relevantes".
+2. Tipos de carrocería (mudancera, frutera, refrigerada, redilas, etc.): usa el bloque "TIPOS DE CARROCERÍA" (referencia Carrocerías López). Indica que la carrocería es orientación de tipo de caja, no precio oficial ISUZU.
+3. Si un dato de ISUZU NO está en el catálogo, no lo inventes.
+4. PROHIBIDO datos de Colombia u otros países para Isuzu.
 
-Objetivo: ayudar a elegir según capacidad de carga, presupuesto, giro (reparto, refrigerado, etc.) y eficiencia. Siempre citando SOLO lo que aparece en el catálogo.${contextSection ? ' Con el contexto del cliente, da recomendaciones específicas con argumentos (distribución de tarimas, tipo de camión, capacidad).' : ''}
+Objetivo: ayudar a elegir carrocería conceptual + modelo ISUZU del catálogo según tonelaje y rutas.${contextSection ? ' Con el contexto del cliente (CRM), sé concreto con producto, tarimas y distribución.' : ''}
 
-Estilo: español (México), profesional, breve. Si no hay dato, dilo claramente.
+Estilo: español (México), profesional, breve.
 
 Resumen:
 ${this.catalogSummary}
+${carroceriasSection}
 
 ${compactSection}
 ${relevantSection}
 
-(Recuerda: solo datos de arriba. Cero invención. Cero Colombia.)`;
+(Recuerda: ISUZU = solo catálogo. Carrocería = referencia López. Cero Colombia.)`;
   }
 
   async completeChat(history: ChatMessage[], clientContext?: string): Promise<string> {

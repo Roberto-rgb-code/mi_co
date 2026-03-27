@@ -78,7 +78,7 @@ export function ClienteDetalle() {
       setMessages([
         {
           role: 'assistant',
-          content: `Hola, estoy viendo los datos de **${cliente.nombre}**${cliente.productoTransportar ? ` (${cliente.productoTransportar})` : ''}. ${ctx ? 'Con base en la información capturada, puedo recomendarte modelos y distribución de carga. ¿Qué te gustaría saber?' : 'Cuéntame qué necesitas y te ayudo a elegir el camión adecuado.'}`,
+          content: `Hola, estoy viendo los datos de **${cliente.nombre}**${cliente.productoTransportar ? ` (${cliente.productoTransportar})` : ''}. ${ctx ? 'Con base en la información capturada, puedo recomendarte modelo ISUZU, tipo de carrocería (caja seca, frutera, refrigerada, etc.) y orientación de rendimiento. ¿Qué te gustaría saber?' : 'Si aún no lo indicaste: **¿qué producto o giro vas a cargar?** (ej. peras refrigeradas, abarrotes, materiales). Con eso cruzo carrocería típica y camión del catálogo.'}`,
         },
       ]);
     }

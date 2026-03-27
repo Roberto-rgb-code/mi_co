@@ -1,0 +1,111 @@
+{
+  "_fuente": "Referencia de tipos de carrocería según catálogo público de Carrocerías López (México). No es precio ni especificación ISUZU oficial.",
+  "_url": "https://carroceriaslopez.com/0_carrocerias",
+  "instruccion_asistente": "Si el cliente no ha dicho qué producto o giro transportará, pregúntalo antes de recomendar. Cruza tipo de carga con la carrocería típica y con el tonelaje del catálogo ISUZU. Para distancia estimada: usa km/L del modelo del catálogo × litros de tanque si están en datos; si no, solo cita km/L sin inventar tanque.",
+  "categorias": [
+    {
+      "nombre": "Cajas secas",
+      "productos": [
+        {
+          "nombre": "Mudancera",
+          "uso": "Muebles, mudanzas, carga general embalada.",
+          "carroceria": "Caja seca tipo mudancera",
+          "tonelaje_orientativo": "ELF 300–600 según volumen y peso"
+        },
+        {
+          "nombre": "Refrigerada",
+          "uso": "Perecederos, lácteos, cadena de frío.",
+          "carroceria": "Caja seca refrigerada",
+          "tonelaje_orientativo": "ELF 400–600 o Forward 800+ según tonelaje y rutas largas"
+        },
+        {
+          "nombre": "De lujo",
+          "uso": "Acabados premium, exhibición o carga delicada.",
+          "carroceria": "Caja seca de lujo / acabados especiales",
+          "tonelaje_orientativo": "ELF 400–600 típico"
+        }
+      ]
+    },
+    {
+      "nombre": "De madera",
+      "productos": [
+        {
+          "nombre": "Aguascalientes",
+          "uso": "Estilo regional de redilas / caja de madera.",
+          "carroceria": "Carrocería de madera tipo Aguascalientes",
+          "tonelaje_orientativo": "ELF 300–500"
+        },
+        {
+          "nombre": "Frutera",
+          "uso": "Frutas y hortalizas a granel o en costales.",
+          "carroceria": "Carrocería frutera de madera",
+          "tonelaje_orientativo": "ELF 300–500; Forward si mucho volumen"
+        },
+        {
+          "nombre": "Redilas",
+          "uso": "Carga general con barandas, materiales, paquetería.",
+          "carroceria": "Redilas",
+          "tonelaje_orientativo": "ELF 200–600 según peso"
+        },
+        {
+          "nombre": "TIPO TRAILER",
+          "uso": "Grandes volúmenes, acople tipo trailer en plataforma.",
+          "carroceria": "Configuración tipo trailer",
+          "tonelaje_orientativo": "Forward 1100–2000 según tractor y normativa"
+        },
+        {
+          "nombre": "Ganadera",
+          "uso": "Animales vivos.",
+          "carroceria": "Carrocería ganadera",
+          "tonelaje_orientativo": "Forward 800+ según normativa y peso vivo"
+        }
+      ]
+    },
+    {
+      "nombre": "Especiales",
+      "productos": [
+        {
+          "nombre": "Plataformas",
+          "uso": "Contenedores, maquinaria, cargas largas.",
+          "carroceria": "Plataforma",
+          "tonelaje_orientativo": "Forward 800–2000 según peso y largo"
+        },
+        {
+          "nombre": "Portallantas",
+          "uso": "Neumáticos y llantas.",
+          "carroceria": "Caja o jaula portallantas",
+          "tonelaje_orientativo": "ELF 400–600 o Forward"
+        },
+        {
+          "nombre": "Remolques",
+          "uso": "Arrastre de remolque; requiere tren tractor adecuado.",
+          "carroceria": "Remolque",
+          "tonelaje_orientativo": "Forward según GCW"
+        },
+        {
+          "nombre": "Vidrieras",
+          "uso": "Vidrio plano, cristales, cargas frágiles altas.",
+          "carroceria": "Carrocería vidriera",
+          "tonelaje_orientativo": "ELF 400–600 o Forward según peso"
+        },
+        {
+          "nombre": "Varios",
+          "uso": "Proyectos a medida.",
+          "carroceria": "Especial / varios",
+          "tonelaje_orientativo": "Definir con peso y dimensiones del cliente"
+        }
+      ]
+    }
+  ],
+  "palabras_clave_a_carroceria": [
+    { "palabras": ["pera", "peras", "fruta", "frutas", "hortaliza"], "sugiere": "Frutera o refrigerada si cadena de frío" },
+    { "palabras": ["abarrotes", "paqueteria", "reparto", "urbano"], "sugiere": "Caja seca o redilas; ELF 200–400" },
+    { "palabras": ["congelado", "refrigerado", "lacteo", "lácteo"], "sugiere": "Refrigerada" },
+    { "palabras": ["mueble", "mudanza"], "sugiere": "Mudancera" },
+    { "palabras": ["madera", "tablaroca", "cemento", "construccion", "construcción"], "sugiere": "Redilas o plataforma" },
+    { "palabras": ["vidrio", "cristal"], "sugiere": "Vidriera" },
+    { "palabras": ["llanta", "neumatico", "neumático"], "sugiere": "Portallantas" },
+    { "palabras": ["ganado", "bovino", "cerdo"], "sugiere": "Ganadera" },
+    { "palabras": ["tarima", "pallet", "tarimas"], "sugiere": "Caja seca o frutera según producto; revisar distribución en CRM" }
+  ]
+}
