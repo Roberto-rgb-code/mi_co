@@ -154,11 +154,14 @@ export class DistribucionService {
 
   /** Genera SVG de la distribución (vista superior) */
   generarSvg(result: DistribucionResult, input: DistribucionInput): string {
-    const scale = 80;
+    const scale = 90; // 1 m = 90 px (escala fija para comparar modelos)
     const l = result.largoCamion * scale;
     const w = result.anchoCamion * scale;
     const tarimaL = (input.tarimaLargo ?? 1.2) * scale;
     const tarimaW = (input.tarimaAncho ?? 1.0) * scale;
+    const pad = 58;
+    const vbW = l + pad * 2;
+    const vbH = w + pad * 2 + 24;
 
     const svgTarimas = result.tarimas
       .map((t) => {
@@ -166,17 +169,33 @@ export class DistribucionService {
         const tl = t.orientacion === 'largo' ? tarimaW : tarimaL;
         const x = t.x * scale;
         const y = t.y * scale;
-        return `<rect x="${x}" y="${y}" width="${tw}" height="${tl}" fill="#c8102e" fill-opacity="0.85" stroke="#8b0a1f" stroke-width="2" rx="4"/><text x="${x + tw / 2}" y="${y + tl / 2}" fill="white" font-size="14" font-weight="bold" text-anchor="middle" dominant-baseline="middle">${t.fila}-${t.col}</text>`;
+        return `<rect x="${x}" y="${y}" width="${tw}" height="${tl}" fill="#c8102e" fill-opacity="0.85" stroke="#8b0a1f" stroke-width="2" rx="4"/><text x="${x + tw / 2}" y="${y + tl / 2}" fill="white" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="middle">${t.fila}-${t.col}</text>`;
       })
       .join('\n');
 
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${l + 40} ${w + 40}" width="${l + 40}" height="${w + 40}">
-  <rect x="20" y="20" width="${l}" height="${w}" fill="#f0f0f0" stroke="#333" stroke-width="2" rx="6"/>
-  <text x="${20 + l / 2}" y="14" fill="#333" font-size="12" text-anchor="middle">${result.modelo} — Vista superior (m)</text>
-  <g transform="translate(20,20)">
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vbW} ${vbH}" width="${vbW}" height="${vbH}">
+  <rect x="0" y="0" width="${vbW}" height="${vbH}" fill="#ffffff"/>
+  <text x="${vbW / 2}" y="18" fill="#202124" font-size="13" font-weight="700" text-anchor="middle">${result.modelo} — Distribución a escala real (catálogo ISUZU México)</text>
+  <text x="${vbW / 2}" y="34" fill="#5f6368" font-size="11" text-anchor="middle">Escala: 1 m = ${scale} px | Caja: ${result.largoCamion.toFixed(2)} m x ${result.anchoCamion.toFixed(2)} m x ${result.altoCamion.toFixed(2)} m</text>
+
+  <rect x="${pad}" y="${pad}" width="${l}" height="${w}" fill="#f6f7f8" stroke="#2c2f33" stroke-width="2.2" rx="6"/>
+  <g transform="translate(${pad},${pad})">
     ${svgTarimas}
   </g>
-  <text x="20" y="${w + 35}" fill="#666" font-size="10">${result.mensaje}</text>
+
+  <line x1="${pad}" y1="${pad - 16}" x2="${pad + l}" y2="${pad - 16}" stroke="#374151" stroke-width="1.2"/>
+  <line x1="${pad}" y1="${pad - 22}" x2="${pad}" y2="${pad - 10}" stroke="#374151" stroke-width="1.2"/>
+  <line x1="${pad + l}" y1="${pad - 22}" x2="${pad + l}" y2="${pad - 10}" stroke="#374151" stroke-width="1.2"/>
+  <text x="${pad + l / 2}" y="${pad - 22}" fill="#374151" font-size="10.5" text-anchor="middle">Largo caja: ${result.largoCamion.toFixed(2)} m</text>
+
+  <line x1="${pad - 18}" y1="${pad}" x2="${pad - 18}" y2="${pad + w}" stroke="#374151" stroke-width="1.2"/>
+  <line x1="${pad - 24}" y1="${pad}" x2="${pad - 12}" y2="${pad}" stroke="#374151" stroke-width="1.2"/>
+  <line x1="${pad - 24}" y1="${pad + w}" x2="${pad - 12}" y2="${pad + w}" stroke="#374151" stroke-width="1.2"/>
+  <text x="${pad - 26}" y="${pad + w / 2}" fill="#374151" font-size="10.5" text-anchor="end" dominant-baseline="middle">Ancho: ${result.anchoCamion.toFixed(2)} m</text>
+
+  <rect x="${vbW - 140}" y="${vbH - 44}" width="90" height="8" fill="#9ca3af" rx="2"/>
+  <text x="${vbW - 95}" y="${vbH - 50}" fill="#4b5563" font-size="10" text-anchor="middle">1 m</text>
+  <text x="${pad}" y="${vbH - 10}" fill="#5f6368" font-size="10.5">${result.mensaje}</text>
 </svg>`;
   }
 }

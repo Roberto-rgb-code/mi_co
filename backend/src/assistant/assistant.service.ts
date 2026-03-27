@@ -595,6 +595,10 @@ ${relevantSection}
         blobLower,
       );
     if (!wantsVisual) return reply;
+    const asksStrictScale =
+      /escala|a escala|escala real|medidas exactas|exacta|tal cual|dimensiones/i.test(blobLower);
+    const wantsIllustration =
+      /imagen|render|foto|realista|ilustraci[oó]n|mockup/i.test(blobLower) && !asksStrictScale;
 
     let modelo = relevant[0]?.modelo;
     if (!modelo) {
@@ -628,7 +632,7 @@ ${relevantSection}
       `_Diagrama según dimensiones de caja del catálogo; validar carga real con normativa y asesoría._`;
 
     let dalleBlock = '';
-    if (envFlag('ENABLE_ASSISTANT_DALLE_IMAGE')) {
+    if (envFlag('ENABLE_ASSISTANT_DALLE_IMAGE') && wantsIllustration) {
       const url = await this.generateDistribucionDalleImage(apiKey, n, modelo);
       if (url) {
         dalleBlock =
@@ -638,7 +642,11 @@ ${relevantSection}
       }
     }
 
-    return `${reply}\n\n---\n${dalleBlock}${svgMd}`;
+    const scaleNote = asksStrictScale
+      ? `\n_Se prioriza el plano técnico porque está calculado con dimensiones del catálogo ISUZU México para ese modelo._`
+      : '';
+
+    return `${reply}\n\n---\n${dalleBlock}${svgMd}${scaleNote}`;
   }
 
   /** DALL·E 3 vía Images API (misma cuenta OpenAI que el chat). Midjourney no tiene API pública estable para este uso. */
