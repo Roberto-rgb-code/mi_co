@@ -19,6 +19,12 @@ export interface ChatMessage {
 
 const DEFAULT_MODEL = 'gpt-4o-mini';
 
+/** DALL·E 3: ~USD 0.04 (standard) / 0.08 (hd) por imagen 1024² — activar solo si lo deseas. */
+function envFlag(name: string): boolean {
+  const v = process.env[name]?.trim().toLowerCase();
+  return v === '1' || v === 'true' || v === 'yes';
+}
+
 /** Límite aproximado de caracteres del listado compacto (evita prompts enormes). */
 const MAX_COMPACT_CATALOG_CHARS = 14_000;
 /** Modelos con detalle ampliado cuando coinciden con la pregunta. */
@@ -567,6 +573,135 @@ ${relevantSection}
     if (!text) {
       throw new ServiceUnavailableException('Respuesta vacía del modelo.');
     }
-    return text;
+    return await this.appendDistribucionPreviewIfNeeded(text, lastUser, clientContext, relevant, apiKey);
+  }
+
+  /**
+   * Ilustración con DALL·E 3 (opcional) + diagrama SVG técnico cuando aplica tarimas/acomodo.
+   */
+  private async appendDistribucionPreviewIfNeeded(
+    reply: string,
+    lastUser: string,
+    clientContext: string | undefined,
+    relevant: CatalogRow[],
+    apiKey: string,
+  ): Promise<string> {
+    if (reply.includes('preview.svg')) return reply;
+
+    const blob = `${lastUser}\n${clientContext || ''}\n${reply.slice(0, 2500)}`;
+    const blobLower = blob.toLowerCase();
+    const wantsVisual =
+      /tarima|pallet|palets|acomod|distribu|american|vista superior|en la caja|cómo qued|como qued|quedar[ií]a/i.test(
+        blobLower,
+      );
+    if (!wantsVisual) return reply;
+
+    let modelo = relevant[0]?.modelo;
+    if (!modelo) {
+      const full = `${lastUser} ${reply}`;
+      const match = full.match(
+        /\b(ELF\s+[0-9]+[A-Za-z+]*|ELF\s+600\s+BUS|FORWARD\s+[0-9]+[A-Za-z+]*)\b/i,
+      );
+      if (match) modelo = match[1].replace(/\s+/g, ' ').trim();
+    }
+    if (!modelo) return reply;
+
+    let n = 4;
+    const tFromCtx = clientContext?.match(/Tarimas:\s*(\d+)/i);
+    const tFromUser = lastUser.match(/(\d+)\s*(?:tarimas?|pallets?|palets?)/i);
+    const tFromReply = reply.match(/(\d+)\s*(?:tarimas?|pallets?|palets?)/i);
+    if (tFromCtx) n = parseInt(tFromCtx[1], 10);
+    else if (tFromUser) n = parseInt(tFromUser[1], 10);
+    else if (tFromReply) n = parseInt(tFromReply[1], 10);
+
+    n = Math.min(99, Math.max(1, n));
+
+    const q = new URLSearchParams({
+      modelo,
+      cantidadTarimas: String(n),
+      tarimaLargo: '1.2',
+      tarimaAncho: '1',
+    });
+    const svgMd =
+      `**Vista técnica (planta, según catálogo):**\n` +
+      `![Distribución de tarimas en la caja (${modelo})](/api/distribucion/preview.svg?${q.toString()})\n` +
+      `_Diagrama según dimensiones de caja del catálogo; validar carga real con normativa y asesoría._`;
+
+    let dalleBlock = '';
+    if (envFlag('ENABLE_ASSISTANT_DALLE_IMAGE')) {
+      const url = await this.generateDistribucionDalleImage(apiKey, n, modelo);
+      if (url) {
+        dalleBlock =
+          `**Ilustración orientativa (IA, DALL·E):**\n` +
+          `![Carga aproximada en caja seca — ${n} tarimas, referencia ${modelo}](${url})\n` +
+          `_Imagen generada; es orientativa, no escala exacta ni especificación ISUZU._\n\n`;
+      }
+    }
+
+    return `${reply}\n\n---\n${dalleBlock}${svgMd}`;
+  }
+
+  /** DALL·E 3 vía Images API (misma cuenta OpenAI que el chat). Midjourney no tiene API pública estable para este uso. */
+  private async generateDistribucionDalleImage(
+    apiKey: string,
+    cantidadTarimas: number,
+    modeloRef: string,
+  ): Promise<string | null> {
+    const quality =
+      process.env.DALLE_IMAGE_QUALITY?.trim().toLowerCase() === 'hd' ? 'hd' : 'standard';
+    const imageModel = process.env.DALLE_IMAGE_MODEL?.trim() || 'dall-e-3';
+
+    const prompt = [
+      'Professional technical illustration, top-down view inside a dry freight box truck cargo area,',
+      `${cantidadTarimas} wooden pallets arranged in neat rows on the floor,`,
+      'American pallet proportions roughly 1.2m by 1m, clean schematic infographic style,',
+      'neutral gray floor and soft daylight, educational diagram,',
+      'no text, no logos, no brand names, no license plates.',
+    ].join(' ');
+
+    try {
+      const res = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(
+          imageModel.includes('dall-e-3')
+            ? {
+                model: imageModel,
+                prompt,
+                n: 1,
+                size: '1024x1024',
+                quality,
+                response_format: 'url',
+              }
+            : {
+                model: imageModel,
+                prompt,
+                n: 1,
+                size: '1024x1024',
+                response_format: 'url',
+              },
+        ),
+        signal: AbortSignal.timeout(120_000),
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        this.logger.warn(`DALL·E images ${res.status}: ${errText.slice(0, 400)}`);
+        return null;
+      }
+      const body = (await res.json()) as { data?: Array<{ url?: string }> };
+      const url = body.data?.[0]?.url;
+      if (!url) {
+        this.logger.warn('DALL·E: respuesta sin URL');
+        return null;
+      }
+      this.logger.log(`DALL·E imagen generada (${modeloRef}, ${cantidadTarimas} tarimas)`);
+      return url;
+    } catch (e) {
+      this.logger.warn(`DALL·E falló: ${e instanceof Error ? e.message : String(e)}`);
+      return null;
+    }
   }
 }
