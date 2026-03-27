@@ -42,6 +42,14 @@ export function Sidebar() {
           <span className="nav-icon">💬</span>
           <span className="nav-text">Asistente</span>
         </NavLink>
+        <NavLink
+          to="/comparativa"
+          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          title="Comparativa"
+        >
+          <span className="nav-icon">⚖️</span>
+          <span className="nav-text">Comparativa</span>
+        </NavLink>
         <NavLink to="/crm" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} title="CRM">
           <span className="nav-icon">👥</span>
           <span className="nav-text">CRM</span>

@@ -9,6 +9,7 @@ import { Asistente } from './pages/Asistente';
 import { CRM } from './pages/CRM';
 import { ClienteDetalle } from './pages/ClienteDetalle';
 import { ClienteNuevo } from './pages/ClienteNuevo';
+import { Comparativa } from './pages/Comparativa';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -32,6 +33,7 @@ function AppRoutes() {
         <Route path="/cotizador" element={<Cotizador />} />
         <Route path="/catalogo" element={<Catalogo />} />
         <Route path="/asistente" element={<Asistente />} />
+        <Route path="/comparativa" element={<Comparativa />} />
         <Route path="/crm" element={<CRM />} />
         <Route path="/crm/nuevo" element={<ClienteNuevo />} />
         <Route path="/crm/:id" element={<ClienteDetalle />} />

@@ -27,6 +27,11 @@ export function Inicio() {
           <h3>Asistente</h3>
           <p>Orientación según carga, precio y giro de tu negocio</p>
         </Link>
+        <Link to="/comparativa" className="action-card">
+          <span className="action-icon">⚖️</span>
+          <h3>Comparativa</h3>
+          <p>Compara un camión de la competencia con modelos ISUZU del catálogo</p>
+        </Link>
       </div>
     </div>
   );

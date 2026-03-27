@@ -7,6 +7,7 @@ import { ModelosModule } from './modelos/modelos.module';
 import { AssistantModule } from './assistant/assistant.module';
 import { ClientesModule } from './clientes/clientes.module';
 import { CarroceriasModule } from './carrocerias/carrocerias.module';
+import { ComparativaModule } from './comparativa/comparativa.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { CarroceriasModule } from './carrocerias/carrocerias.module';
     AssistantModule,
     ClientesModule,
     CarroceriasModule,
+    ComparativaModule,
   ],
   controllers: [AppController],
 })
