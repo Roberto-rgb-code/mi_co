@@ -2,8 +2,13 @@
 [phases.setup]
 nixPkgs = ["nodejs_20"]
 
+# Nixpacks/Railway sets NODE_ENV=production during install, which skips
+# devDependencies (@nestjs/cli, typescript, vite) required for the build.
+[variables]
+NPM_CONFIG_PRODUCTION = "false"
+
 [phases.install]
-cmds = ["npm install"]
+cmds = ["npm install --include=dev"]
 
 [phases.build]
 cmds = ["npm run frontend:build", "npm run backend:build"]
