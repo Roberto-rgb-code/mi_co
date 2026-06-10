@@ -61,6 +61,9 @@ export interface CubicajeResult {
   pesoOk: boolean;
   filas: number;
   mensaje: string;
+  /** Modelo alternativo del catálogo que sí cabe toda la carga (si aplica). */
+  modeloSugerido?: string;
+  sugerencia?: string;
 }
 
 type ModeloDims = {
@@ -107,6 +110,20 @@ export class CubicajeService {
   }
 
   calcular(input: CubicajeInput): CubicajeResult {
+    const base = this.computePack(input);
+    let modeloSugerido: string | undefined;
+    let sugerencia: string | undefined;
+    if (!base.cabenTodos || !base.pesoOk) {
+      const alt = this.findBestModelo(input, input.modelo);
+      if (alt) {
+        modeloSugerido = alt.modelo;
+        sugerencia = alt.mensaje;
+      }
+    }
+    return { ...base, modeloSugerido, sugerencia };
+  }
+
+  private computePack(input: CubicajeInput): CubicajeResult {
     const mod = this.catalog[input.modelo] || this.findModeloByKey(input.modelo);
     const largo = mod?.largo_aplicacion ?? 6;
     const ancho = mod?.ancho_aplicacion ?? 2.2;
@@ -175,6 +192,38 @@ export class CubicajeService {
       filas,
       mensaje,
     };
+  }
+
+  /** Busca el camión más compacto del catálogo donde quepa toda la carga. */
+  private findBestModelo(
+    input: CubicajeInput,
+    excludeModelo: string,
+  ): { modelo: string; mensaje: string } | undefined {
+    const norm = (s: string) => s.toLowerCase().replace(/\s/g, '');
+    const candidates = Object.keys(this.catalog)
+      .map((key) => {
+        const mod = this.catalog[key];
+        return {
+          label: key,
+          vol:
+            (mod.largo_aplicacion ?? 6) *
+            (mod.ancho_aplicacion ?? 2.2) *
+            (mod.alto_aplicacion ?? 2.2),
+        };
+      })
+      .filter((c) => norm(c.label) !== norm(excludeModelo))
+      .sort((a, b) => a.vol - b.vol);
+
+    for (const c of candidates) {
+      const trial = this.computePack({ ...input, modelo: c.label });
+      if (trial.cabenTodos && trial.pesoOk) {
+        return {
+          modelo: c.label,
+          mensaje: `${c.label} cabe toda la carga (${trial.utilizacionVolumen}% del volumen).`,
+        };
+      }
+    }
+    return undefined;
   }
 
   private flattenBultos(bultos: BultoInput[]): FlatBulto[] {

@@ -108,6 +108,8 @@ export interface CubicajeResult {
   pesoOk: boolean;
   filas: number;
   mensaje: string;
+  modeloSugerido?: string;
+  sugerencia?: string;
 }
 
 export type CameraPreset = 'iso' | 'side' | 'top';

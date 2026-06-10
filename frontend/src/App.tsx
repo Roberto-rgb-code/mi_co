@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
@@ -10,7 +11,8 @@ import { CRM } from './pages/CRM';
 import { ClienteDetalle } from './pages/ClienteDetalle';
 import { ClienteNuevo } from './pages/ClienteNuevo';
 import { Comparativa } from './pages/Comparativa';
-import { Cubicaje } from './pages/Cubicaje';
+
+const Cubicaje = lazy(() => import('./pages/Cubicaje').then((m) => ({ default: m.Cubicaje })));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -35,7 +37,21 @@ function AppRoutes() {
         <Route path="/catalogo" element={<Catalogo />} />
         <Route path="/asistente" element={<Asistente />} />
         <Route path="/comparativa" element={<Comparativa />} />
-        <Route path="/cubicaje" element={<Cubicaje />} />
+        <Route
+          path="/cubicaje"
+          element={
+            <Suspense
+              fallback={
+                <div className="loading" style={{ padding: '4rem' }}>
+                  <div className="spinner" />
+                  <p>Cargando cubicaje 3D…</p>
+                </div>
+              }
+            >
+              <Cubicaje />
+            </Suspense>
+          }
+        />
         <Route path="/crm" element={<CRM />} />
         <Route path="/crm/nuevo" element={<ClienteNuevo />} />
         <Route path="/crm/:id" element={<ClienteDetalle />} />

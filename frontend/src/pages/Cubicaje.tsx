@@ -125,13 +125,17 @@ export function Cubicaje() {
     return map;
   }, [result]);
 
-  const handleCalcular = async () => {
-    if (!modelo || totalBultos < 1) return;
+  const handleCalcular = async (modeloOverride?: string) => {
+    const targetModelo = modeloOverride ?? modelo;
+    if (!targetModelo || totalBultos < 1) return;
+    if (modeloOverride) setModelo(modeloOverride);
     setLoading(true);
     setError(null);
-    setResult(null);
-    setFilaFilter(null);
-    setHighlightedId(null);
+    if (!modeloOverride) {
+      setResult(null);
+      setFilaFilter(null);
+      setHighlightedId(null);
+    }
     try {
       const bultos = inventarioToBultos(
         inventario,
@@ -141,7 +145,7 @@ export function Cubicaje() {
       const res = await fetch('/api/cubicaje/calcular', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ modelo, bultos }),
+        body: JSON.stringify({ modelo: targetModelo, bultos }),
       });
       const data = (await res.json()) as CubicajeResult & { message?: string };
       if (!res.ok) throw new Error(data.message || 'Error al calcular cubicaje');
@@ -323,6 +327,19 @@ export function Cubicaje() {
                   </div>
                   <div className="cubicaje-metric cubicaje-metric--msg">
                     <span className={result.cabenTodos ? 'ok' : 'warn'}>{result.mensaje}</span>
+                    {result.modeloSugerido && result.sugerencia && (
+                      <div className="cubicaje-suggestion">
+                        <p>{result.sugerencia}</p>
+                        <button
+                          type="button"
+                          className="btn-secondary cubicaje-suggestion-btn"
+                          onClick={() => void handleCalcular(result.modeloSugerido)}
+                          disabled={loading}
+                        >
+                          Usar {result.modeloSugerido}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </>
               ) : (
