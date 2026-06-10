@@ -238,7 +238,7 @@
 
 .cubicaje-canvas-wrap {
   flex: 1;
-  min-height: 540px;
+  min-height: 560px;
   margin: 0.75rem 1rem;
   border-radius: 4px;
   overflow: hidden;
@@ -246,6 +246,22 @@
   background: #e8ecf1;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
   position: relative;
+}
+
+.cubicaje-canvas-hint {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.68rem;
+  color: #475569;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  pointer-events: none;
+  z-index: 2;
+  white-space: nowrap;
 }
 
 .cubicaje-canvas-loading {
@@ -401,6 +417,31 @@
   color: var(--text);
   padding: 0.25rem 0;
   cursor: pointer;
+}
+
+.cubicaje-zoom-row {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+}
+
+.cubicaje-zoom-btn {
+  flex: 1;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.cubicaje-zoom-btn:hover {
+  background: var(--hover-bg);
+  border-color: #3b82f6;
+  color: #1d4ed8;
 }
 
 .cubicaje-disclaimer {

@@ -46,6 +46,21 @@ export function Cubicaje() {
   const [showPlacedList, setShowPlacedList] = useState(false);
   const [showWeight, setShowWeight] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
+  const [zoomFactor, setZoomFactor] = useState(1);
+  const [viewResetKey, setViewResetKey] = useState(0);
+
+  const setCameraView = (preset: CameraPreset) => {
+    setCameraPreset(preset);
+    setZoomFactor(1);
+    setViewResetKey((k) => k + 1);
+  };
+
+  const zoomIn = () => setZoomFactor((z) => Math.min(3, z * 1.2));
+  const zoomOut = () => setZoomFactor((z) => Math.max(0.35, z / 1.2));
+  const resetView = () => {
+    setZoomFactor(1);
+    setViewResetKey((k) => k + 1);
+  };
 
   useEffect(() => {
     Promise.all([
@@ -374,6 +389,8 @@ export function Cubicaje() {
                     highlightedId={highlightedId}
                     showWeight={showWeight}
                     showLabels={showLabels}
+                    zoomFactor={zoomFactor}
+                    viewResetKey={viewResetKey}
                   />
                 ) : (
                   <CubicajeScene
@@ -382,6 +399,8 @@ export function Cubicaje() {
                     preset={cameraPreset}
                     showWeight={false}
                     showLabels={false}
+                    zoomFactor={zoomFactor}
+                    viewResetKey={viewResetKey}
                   />
                 )}
                 {loading && (
@@ -397,7 +416,7 @@ export function Cubicaje() {
                       key={key}
                       type="button"
                       className={`cubicaje-view-icon ${cameraPreset === key ? 'active' : ''}`}
-                      onClick={() => setCameraPreset(key)}
+                      onClick={() => setCameraView(key)}
                       title={CAMERA_PRESETS[key].label}
                     >
                       {key === 'side' && (
@@ -439,7 +458,22 @@ export function Cubicaje() {
                     />
                     Etiquetas
                   </label>
+                  <p className="cubicaje-view-rail-title">Zoom</p>
+                  <div className="cubicaje-zoom-row">
+                    <button type="button" className="cubicaje-zoom-btn" onClick={zoomOut} title="Alejar">
+                      −
+                    </button>
+                    <button type="button" className="cubicaje-zoom-btn" onClick={resetView} title="Restablecer vista">
+                      ⟲
+                    </button>
+                    <button type="button" className="cubicaje-zoom-btn" onClick={zoomIn} title="Acercar">
+                      +
+                    </button>
+                  </div>
                 </aside>
+                <p className="cubicaje-canvas-hint">
+                  Rueda del ratón: zoom · Arrastrar: girar · Clic derecho: mover
+                </p>
                 <p className="cubicaje-disclaimer">La carga real puede variar ligeramente</p>
               </>
             ) : (
