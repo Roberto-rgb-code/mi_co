@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { ClienteDto } from './CRM';
-import { CubicajeScene } from '../components/CubicajeScene';
+import { CubicajeScene, CubicajeSceneFromResult } from '../components/CubicajeScene';
 import { CubicajeInventoryCard } from '../components/CubicajeInventoryCard';
 import type { CameraPreset, CubicajeResult, InventarioCounts } from '../types/cubicaje';
 import { CAMERA_PRESETS, TIPOS_BULTO, inventarioToBultos } from '../types/cubicaje';
@@ -92,6 +92,19 @@ export function Cubicaje() {
   const selectedCliente = useMemo(
     () => clientes.find((c) => c.id === clienteId),
     [clientes, clienteId],
+  );
+
+  const selectedModelo = useMemo(
+    () => modelos.find((m) => m.label === modelo || m.key === modelo),
+    [modelos, modelo],
+  );
+
+  const previewContenedor = useMemo(
+    () =>
+      selectedModelo
+        ? { largo: selectedModelo.largo, ancho: selectedModelo.ancho, alto: selectedModelo.alto }
+        : null,
+    [selectedModelo],
   );
 
   const totalBultos = inventario.pequena + inventario.mediana + inventario.grande + inventario.tarima;
@@ -187,9 +200,19 @@ export function Cubicaje() {
                 <button
                   type="button"
                   className={`cubicaje-truck-item ${modelo === m.label ? 'active' : ''}`}
-                  onClick={() => setModelo(m.label)}
+                  onClick={() => {
+                    setModelo(m.label);
+                    setResult(null);
+                  }}
                 >
-                  <span className="cubicaje-truck-icon">🚛</span>
+                  <span className="cubicaje-truck-icon" aria-hidden>
+                    <svg viewBox="0 0 48 32" width="36" height="24">
+                      <rect x="2" y="10" width="14" height="14" rx="2" fill={modelo === m.label ? '#c8102e' : '#3f3f46'} />
+                      <rect x="16" y="8" width="30" height="16" rx="1" fill={modelo === m.label ? '#e4e4e7' : '#d4d4d8'} stroke="#a1a1aa" />
+                      <circle cx="10" cy="26" r="3" fill="#27272a" />
+                      <circle cx="38" cy="26" r="3" fill="#27272a" />
+                    </svg>
+                  </span>
                   <span className="cubicaje-truck-info">
                     <strong>{m.label}</strong>
                     <small>
@@ -242,43 +265,75 @@ export function Cubicaje() {
           </div>
 
           <div className="cubicaje-canvas-wrap">
-            {result ? (
-              <CubicajeScene
-                result={result}
-                preset={cameraPreset}
-                filaFilter={filaFilter}
-                highlightedId={highlightedId}
-              />
+            {previewContenedor ? (
+              <>
+                {result ? (
+                  <CubicajeSceneFromResult
+                    result={result}
+                    tarimaDims={{ largo: tarimaLargo, ancho: tarimaAncho, alto: tarimaAlto }}
+                    preset={cameraPreset}
+                    filaFilter={filaFilter}
+                    highlightedId={highlightedId}
+                  />
+                ) : (
+                  <CubicajeScene
+                    contenedor={previewContenedor}
+                    modeloLabel={modelo}
+                    preset={cameraPreset}
+                  />
+                )}
+                {loading && (
+                  <div className="cubicaje-canvas-loading">
+                    <div className="spinner" />
+                    <span>Calculando cubicaje…</span>
+                  </div>
+                )}
+                <div className="cubicaje-canvas-hint">
+                  Arrastra para rotar · Rueda para zoom
+                </div>
+              </>
             ) : (
               <div className="cubicaje-canvas-placeholder">
                 <span>🚛</span>
-                <p>Selecciona camión y carga, luego optimiza el cubicaje.</p>
+                <p>Cargando catálogo de camiones…</p>
               </div>
             )}
           </div>
 
-          {result && (
+          {(result || previewContenedor) && (
             <footer className="cubicaje-metrics-bar">
-              <div className="cubicaje-metric">
-                <span className="cubicaje-metric-label">Peso</span>
-                <strong className={result.pesoOk ? '' : 'warn'}>
-                  {Math.round(result.pesoColocadoKg)} kg
-                  {result.pesoMaxKg != null && ` / ~${Math.round(result.pesoMaxKg)} kg`}
-                </strong>
-              </div>
-              <div className="cubicaje-metric">
-                <span className="cubicaje-metric-label">Volumen</span>
-                <strong>{result.utilizacionVolumen}%</strong>
-              </div>
-              <div className="cubicaje-metric">
-                <span className="cubicaje-metric-label">Colocados</span>
-                <strong>
-                  {result.totalColocados}/{result.totalSolicitados}
-                </strong>
-              </div>
-              <div className="cubicaje-metric cubicaje-metric--msg">
-                <span className={result.cabenTodos ? 'ok' : 'warn'}>{result.mensaje}</span>
-              </div>
+              {result ? (
+                <>
+                  <div className="cubicaje-metric">
+                    <span className="cubicaje-metric-label">Peso</span>
+                    <strong className={result.pesoOk ? '' : 'warn'}>
+                      {Math.round(result.pesoColocadoKg)} kg
+                      {result.pesoMaxKg != null && ` / ~${Math.round(result.pesoMaxKg)} kg`}
+                    </strong>
+                  </div>
+                  <div className="cubicaje-metric">
+                    <span className="cubicaje-metric-label">Volumen</span>
+                    <strong>{result.utilizacionVolumen}%</strong>
+                  </div>
+                  <div className="cubicaje-metric">
+                    <span className="cubicaje-metric-label">Colocados</span>
+                    <strong>
+                      {result.totalColocados}/{result.totalSolicitados}
+                    </strong>
+                  </div>
+                  <div className="cubicaje-metric cubicaje-metric--msg">
+                    <span className={result.cabenTodos ? 'ok' : 'warn'}>{result.mensaje}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="cubicaje-metric cubicaje-metric--msg">
+                  <span className="cubicaje-muted-inline">
+                    {modelo} · Caja {previewContenedor!.largo.toFixed(2)}×
+                    {previewContenedor!.ancho.toFixed(2)}×{previewContenedor!.alto.toFixed(2)} m — Pulsa
+                    «Optimizar carga» para simular.
+                  </span>
+                </div>
+              )}
             </footer>
           )}
         </main>

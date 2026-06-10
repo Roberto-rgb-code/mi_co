@@ -116,9 +116,9 @@ export const CAMERA_PRESETS: Record<
   CameraPreset,
   { position: [number, number, number]; label: string }
 > = {
-  side: { position: [0.02, 0.35, 2.2], label: 'Vista lateral' },
-  top: { position: [0.02, 2.8, 0.02], label: 'Vista superior' },
-  iso: { position: [1.4, 1.0, 1.6], label: 'Isométrica' },
+  side: { position: [0.02, 0.28, 2.4], label: 'Vista lateral' },
+  top: { position: [0.02, 3.2, 0.05], label: 'Vista superior' },
+  iso: { position: [1.6, 0.85, 1.8], label: 'Isométrica' },
 };
 
 export interface InventarioCounts {
