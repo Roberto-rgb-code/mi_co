@@ -378,6 +378,25 @@ export function Cubicaje() {
                     <span>Calculando…</span>
                   </div>
                 )}
+                {previewContenedor && (
+                  <div className="cubicaje-canvas-legend" aria-label="Leyenda de medidas">
+                    <p className="cubicaje-legend-title">Espacio de carga</p>
+                    <p className="cubicaje-legend-dims">
+                      L {previewContenedor.largo.toFixed(2)} m · A {previewContenedor.ancho.toFixed(2)} m · H{' '}
+                      {previewContenedor.alto.toFixed(2)} m
+                    </p>
+                    <ul className="cubicaje-legend-colors">
+                      {(['pequena', 'mediana', 'grande', 'tarima'] as const).map((t) =>
+                        inventario[t] > 0 ? (
+                          <li key={t}>
+                            <span className="cubicaje-legend-dot" style={{ background: TIPOS_BULTO[t].color }} />
+                            {TIPOS_BULTO[t].label}
+                          </li>
+                        ) : null,
+                      )}
+                    </ul>
+                  </div>
+                )}
               </>
             ) : (
               <div className="cubicaje-canvas-placeholder">
@@ -427,7 +446,7 @@ export function Cubicaje() {
                   checked={showLabels}
                   onChange={(e) => setShowLabels(e.target.checked)}
                 />
-                Etiquetas
+                Etiquetas en cajas
               </label>
               <button type="button" onClick={zoomOut} title="Alejar">
                 −
