@@ -7,10 +7,51 @@ interface Props {
   onChange: (n: number) => void;
   placed?: number;
   unplaced?: number;
+  compact?: boolean;
 }
 
-/** Tarjeta de inventario (estilo panel derecho XPO / CLOA). */
-export function CubicajeInventoryCard({ preset, count, onChange, placed, unplaced }: Props) {
+export function CubicajeInventoryCard({
+  preset,
+  count,
+  onChange,
+  placed,
+  unplaced,
+  compact = false,
+}: Props) {
+  if (compact) {
+    return (
+      <div className="cubicaje-inv-row">
+        <span className="cubicaje-inv-dot" style={{ background: preset.color }} />
+        <div className="cubicaje-inv-row-info">
+          <span className="cubicaje-inv-row-name">{preset.label}</span>
+          <span className="cubicaje-inv-row-dim">
+            {preset.largo}×{preset.ancho}×{preset.alto} m
+          </span>
+        </div>
+        {placed != null && (
+          <span className={`cubicaje-inv-row-status ${unplaced ? 'warn' : 'ok'}`}>
+            {placed}/{count}
+          </span>
+        )}
+        <div className="cubicaje-inv-qty cubicaje-inv-qty--sm">
+          <button type="button" onClick={() => onChange(Math.max(0, count - 1))} aria-label="Menos">
+            −
+          </button>
+          <input
+            type="number"
+            min={0}
+            max={999}
+            value={count}
+            onChange={(e) => onChange(Math.max(0, parseInt(e.target.value, 10) || 0))}
+          />
+          <button type="button" onClick={() => onChange(count + 1)} aria-label="Más">
+            +
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const vol = (preset.largo * preset.ancho * preset.alto).toFixed(3);
 
   return (

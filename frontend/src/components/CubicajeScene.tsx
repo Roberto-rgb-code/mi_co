@@ -1,20 +1,17 @@
 import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { ContactShadows, OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import * as THREE from 'three';
 import type { CameraPreset, CubicajeResult } from '../types/cubicaje';
-import { IsuzuTruck, CargoBulto, AxleWeightIndicators } from './IsuzuTruckModel';
-import { computeAxleLoads } from '../utils/cubicajeAxleWeight';
+import { CargaContainer, CargoBulto } from './IsuzuTruckModel';
 
 export interface CubicajeSceneProps {
   contenedor: CubicajeResult['contenedor'];
-  modeloLabel?: string;
   bultos?: CubicajeResult['bultos'];
   preset: CameraPreset;
   filaFilter?: number | null;
   highlightedId?: string | null;
-  showWeight?: boolean;
   showLabels?: boolean;
   zoomFactor?: number;
   viewResetKey?: number;
@@ -22,27 +19,21 @@ export interface CubicajeSceneProps {
 
 function getCameraFrame(contenedor: CubicajeResult['contenedor'], preset: CameraPreset) {
   const { largo, ancho, alto } = contenedor;
-  const cabLen = Math.min(2.1, Math.max(1.55, largo * 0.28));
-  const cabFront = -cabLen * 0.15;
-  const cx = (cabFront + largo) / 2;
-  const cy = alto * 0.42;
+  const cx = largo / 2;
+  const cy = alto / 2;
   const cz = ancho / 2;
-  const span = Math.max(largo + cabLen + 1.5, ancho + 1, alto + 1, 5);
+  const span = Math.max(largo, ancho, alto, 2) + 1.2;
 
   let position: THREE.Vector3;
   if (preset === 'side') {
-    position = new THREE.Vector3(cx, cy + span * 0.05, cz - span * 1.05);
+    position = new THREE.Vector3(cx, cy, cz - span * 1.15);
   } else if (preset === 'top') {
-    position = new THREE.Vector3(cx, span * 1.35, cz + 0.01);
+    position = new THREE.Vector3(cx, span * 1.25, cz);
   } else {
-    position = new THREE.Vector3(cx + span * 0.72, cy + span * 0.48, cz + span * 0.72);
+    position = new THREE.Vector3(cx + span * 0.85, cy + span * 0.55, cz + span * 0.85);
   }
 
-  return {
-    target: new THREE.Vector3(cx, cy, cz),
-    position,
-    span,
-  };
+  return { target: new THREE.Vector3(cx, cy, cz), position, span };
 }
 
 function CameraRig({
@@ -63,10 +54,10 @@ function CameraRig({
   useEffect(() => {
     if (!(camera instanceof THREE.PerspectiveCamera)) return;
 
-    camera.fov = 42;
+    camera.fov = 38;
     camera.aspect = size.width / Math.max(size.height, 1);
     camera.near = 0.05;
-    camera.far = frame.span * 12;
+    camera.far = frame.span * 10;
     camera.updateProjectionMatrix();
 
     const dir = frame.position.clone().sub(frame.target).normalize();
@@ -76,8 +67,8 @@ function CameraRig({
     const controls = controlsRef.current;
     if (controls) {
       controls.target.copy(frame.target);
-      controls.minDistance = frame.span * 0.18;
-      controls.maxDistance = frame.span * 3.5;
+      controls.minDistance = frame.span * 0.25;
+      controls.maxDistance = frame.span * 4;
       controls.update();
     }
   }, [preset, zoomFactor, viewResetKey, frame, camera, size]);
@@ -90,8 +81,8 @@ function CameraRig({
       enablePan
       enableZoom
       enableRotate
-      maxPolarAngle={Math.PI / 2.02}
-      minPolarAngle={0.05}
+      maxPolarAngle={Math.PI / 2.01}
+      minPolarAngle={0.08}
     />
   );
 }
@@ -102,38 +93,24 @@ function SceneContent({
   preset,
   filaFilter,
   highlightedId,
-  showWeight = true,
   showLabels = true,
   zoomFactor = 1,
   viewResetKey = 0,
 }: CubicajeSceneProps) {
-  const cabLen = Math.min(2.1, Math.max(1.55, contenedor.largo * 0.28));
-  const axles = useMemo(
-    () => computeAxleLoads(bultos, contenedor.largo, cabLen),
-    [bultos, contenedor.largo, cabLen],
-  );
-
   return (
     <>
-      <color attach="background" args={['#e8ecf1']} />
-      <ambientLight intensity={0.75} />
-      <directionalLight position={[12, 18, 8]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
-      <directionalLight position={[-8, 10, -6]} intensity={0.35} />
-      <PerspectiveCamera makeDefault position={[5, 4, 8]} fov={42} />
+      <color attach="background" args={['#eef2f6']} />
+      <ambientLight intensity={0.9} />
+      <directionalLight position={[8, 12, 6]} intensity={1.1} castShadow />
+      <directionalLight position={[-5, 8, -4]} intensity={0.3} />
+      <PerspectiveCamera makeDefault fov={38} />
       <CameraRig
         preset={preset}
         contenedor={contenedor}
         zoomFactor={zoomFactor}
         viewResetKey={viewResetKey}
       />
-      <IsuzuTruck {...contenedor} />
-      <ContactShadows
-        position={[contenedor.largo / 2, 0, contenedor.ancho / 2]}
-        opacity={0.35}
-        scale={contenedor.largo + 6}
-        blur={2.5}
-        far={4}
-      />
+      <CargaContainer {...contenedor} />
       {bultos.map((b) => (
         <CargoBulto
           key={b.id}
@@ -144,12 +121,6 @@ function SceneContent({
           showLabel={showLabels}
         />
       ))}
-      <AxleWeightIndicators
-        axles={axles}
-        alto={contenedor.alto}
-        ancho={contenedor.ancho}
-        visible={showWeight && bultos.length > 0}
-      />
     </>
   );
 }
@@ -177,7 +148,6 @@ export function CubicajeSceneFromResult({
   preset: CameraPreset;
   filaFilter?: number | null;
   highlightedId?: string | null;
-  showWeight?: boolean;
   showLabels?: boolean;
   zoomFactor?: number;
   viewResetKey?: number;
