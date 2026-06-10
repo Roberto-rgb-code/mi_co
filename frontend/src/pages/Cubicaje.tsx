@@ -39,11 +39,12 @@ export function Cubicaje() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CubicajeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [cameraPreset, setCameraPreset] = useState<CameraPreset>('side');
+  const [cameraPreset, setCameraPreset] = useState<CameraPreset>('iso');
   const [filaFilter, setFilaFilter] = useState<number | null>(null);
   const [showLabels, setShowLabels] = useState(true);
   const [zoomFactor, setZoomFactor] = useState(1);
   const [viewResetKey, setViewResetKey] = useState(0);
+  const [truckSearch, setTruckSearch] = useState('');
 
   const setCameraView = (preset: CameraPreset) => {
     setCameraPreset(preset);
@@ -193,6 +194,14 @@ export function Cubicaje() {
     ? calcMetrosVacios(result.bultos, result.contenedor.largo)
     : previewContenedor?.largo ?? 0;
 
+  const filteredModelos = useMemo(() => {
+    const q = truckSearch.trim().toLowerCase();
+    if (!q) return modelos;
+    return modelos.filter(
+      (m) => m.label.toLowerCase().includes(q) || (m.linea && m.linea.toLowerCase().includes(q)),
+    );
+  }, [modelos, truckSearch]);
+
   const onModeloChange = (label: string) => {
     setModelo(label);
     setResult(null);
@@ -203,22 +212,15 @@ export function Cubicaje() {
     <div className="page cubicaje cubicaje-app">
       <header className="cubicaje-toolbar">
         <div className="cubicaje-toolbar-left">
-          <span className="cubicaje-brand-logo">Cubicaje</span>
-          <label className="cubicaje-field cubicaje-field--model">
-            <span>Modelo ISUZU</span>
-            <select value={modelo} onChange={(e) => onModeloChange(e.target.value)}>
-              {modelos.map((m) => (
-                <option key={m.key} value={m.label}>
-                  {m.label} — {m.largo.toFixed(1)}×{m.ancho.toFixed(1)}×{m.alto.toFixed(1)} m
-                </option>
-              ))}
-            </select>
-          </label>
-          {previewContenedor && (
-            <span className="cubicaje-dims-chip">
-              {(previewContenedor.largo * 100).toFixed(0)}×{(previewContenedor.ancho * 100).toFixed(0)}×
-              {(previewContenedor.alto * 100).toFixed(0)} cm
-            </span>
+          <span className="cubicaje-brand-logo">Cubicaje ISUZU</span>
+          {selectedModelo && (
+            <>
+              <strong className="cubicaje-model-name">{modelo}</strong>
+              <span className="cubicaje-dims-chip">
+                {(selectedModelo.largo * 100).toFixed(0)}×{(selectedModelo.ancho * 100).toFixed(0)}×
+                {(selectedModelo.alto * 100).toFixed(0)} cm
+              </span>
+            </>
           )}
         </div>
 
@@ -313,6 +315,41 @@ export function Cubicaje() {
       )}
 
       <div className="cubicaje-main">
+        <aside className="cubicaje-fleet">
+          <h2 className="cubicaje-sidebar-title">Flota</h2>
+          <input
+            type="search"
+            className="cubicaje-fleet-search"
+            placeholder="Buscar…"
+            value={truckSearch}
+            onChange={(e) => setTruckSearch(e.target.value)}
+          />
+          <ul className="cubicaje-fleet-list">
+            {filteredModelos.map((m) => (
+              <li key={m.key}>
+                <button
+                  type="button"
+                  className={`cubicaje-fleet-item ${modelo === m.label ? 'active' : ''}`}
+                  onClick={() => onModeloChange(m.label)}
+                >
+                  <span className="cubicaje-fleet-thumb" aria-hidden>
+                    <svg viewBox="0 0 40 24" width="32" height="18">
+                      <rect x="1" y="8" width="10" height="10" rx="1" fill={modelo === m.label ? '#c8102e' : '#64748b'} />
+                      <rect x="11" y="6" width="28" height="12" rx="1" fill="#f1f5f9" stroke="#94a3b8" />
+                    </svg>
+                  </span>
+                  <span className="cubicaje-fleet-info">
+                    <strong>{m.label}</strong>
+                    <small>
+                      {m.largo.toFixed(1)}×{m.ancho.toFixed(1)}×{m.alto.toFixed(1)} m
+                    </small>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </aside>
+
         <section className="cubicaje-viewport">
           <div className="cubicaje-canvas-wrap">
             {previewContenedor ? (
@@ -406,12 +443,11 @@ export function Cubicaje() {
         </section>
 
         <aside className="cubicaje-sidebar">
-          <h2 className="cubicaje-sidebar-title">Inventario</h2>
+          <h2 className="cubicaje-sidebar-title">Carga a colocar</h2>
           <div className="cubicaje-inv-list">
             {(['pequena', 'mediana', 'grande', 'tarima'] as const).map((tipo) => (
               <CubicajeInventoryCard
                 key={tipo}
-                compact
                 preset={TIPOS_BULTO[tipo]}
                 count={inventario[tipo]}
                 onChange={(n) => setInv(tipo, n)}

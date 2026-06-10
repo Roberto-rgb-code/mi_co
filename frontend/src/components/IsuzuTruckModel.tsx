@@ -1,11 +1,100 @@
 import { Edges, Line, RoundedBox, Text } from '@react-three/drei';
+import * as THREE from 'three';
 import type { BultoColocado } from '../types/cubicaje';
 
-const EDGE = '#334155';
-const FLOOR = '#d4c4a8';
+const ISUZU_RED = '#c8102e';
+const TRAILER_GLASS = {
+  color: '#64748b',
+  transparent: true,
+  opacity: 0.14,
+  roughness: 0.15,
+  side: THREE.DoubleSide,
+  depthWrite: false,
+};
 
-/** Volumen de carga abierto (wireframe), sin cabina ni camión. Origen en esquina piso-frente-izq. */
-export function CargaContainer({
+/** Longitud de cabina — siempre a la izquierda de x=0 (sin invadir la caja). */
+export function getCabLength(largo: number): number {
+  return Math.min(2.0, Math.max(1.35, largo * 0.24));
+}
+
+function Wheel({ x, z, r = 0.22 }: { x: number; z: number; r?: number }) {
+  return (
+    <group position={[x, r * 0.82, z]}>
+      <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <cylinderGeometry args={[r, r, 0.1, 20]} />
+        <meshStandardMaterial color="#1e293b" roughness={0.9} />
+      </mesh>
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[r * 0.52, r * 0.52, 0.11, 14]} />
+        <meshStandardMaterial color="#94a3b8" metalness={0.5} roughness={0.35} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Piso + paredes semitransparentes del volumen de carga [0 … largo]. */
+function TrailerCargoBox({ largo, ancho, alto }: { largo: number; ancho: number; alto: number }) {
+  const cx = largo / 2;
+  const cz = ancho / 2;
+
+  return (
+    <group>
+      <mesh position={[cx, 0.006, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[largo, ancho]} />
+        <meshStandardMaterial color="#dcc9a8" roughness={0.95} />
+      </mesh>
+
+      {/* Paredes trailer */}
+      <mesh position={[cx, alto / 2, 0.025]}>
+        <boxGeometry args={[largo, alto, 0.05]} />
+        <meshStandardMaterial {...TRAILER_GLASS} />
+      </mesh>
+      <mesh position={[cx, alto / 2, ancho - 0.025]}>
+        <boxGeometry args={[largo, alto, 0.05]} />
+        <meshStandardMaterial {...TRAILER_GLASS} />
+      </mesh>
+      <mesh position={[largo - 0.025, alto / 2, cz]}>
+        <boxGeometry args={[0.05, alto, ancho]} />
+        <meshStandardMaterial {...TRAILER_GLASS} />
+      </mesh>
+      <mesh position={[cx, alto, cz]}>
+        <boxGeometry args={[largo, 0.05, ancho]} />
+        <meshStandardMaterial color="#e2e8f0" transparent opacity={0.2} />
+      </mesh>
+
+      {/* Puerta trasera de cabina / frente de caja (x=0) */}
+      <mesh position={[0.025, alto / 2, cz]}>
+        <boxGeometry args={[0.05, alto, ancho]} />
+        <meshStandardMaterial color="#e2e8f0" roughness={0.35} opacity={0.85} transparent />
+      </mesh>
+
+      {/* Wireframe caja */}
+      <Line points={[[0, 0, 0], [largo, 0, 0], [largo, alto, 0], [0, alto, 0], [0, 0, 0]]} color="#475569" />
+      <Line points={[[0, 0, ancho], [largo, 0, ancho], [largo, alto, ancho], [0, alto, ancho], [0, 0, ancho]]} color="#475569" />
+      {[
+        [[0, 0, 0], [0, alto, 0]],
+        [[largo, 0, 0], [largo, alto, 0]],
+        [[0, 0, ancho], [0, alto, ancho]],
+        [[largo, 0, ancho], [largo, alto, ancho]],
+        [[0, alto, 0], [0, alto, ancho]],
+        [[largo, alto, 0], [largo, alto, ancho]],
+      ].map((pts, i) => (
+        <Line key={i} points={pts as [number, number, number][]} color="#64748b" />
+      ))}
+
+      {/* Rejilla */}
+      {Array.from({ length: Math.floor(largo / 0.5) + 1 }, (_, i) => (
+        <Line key={`g${i}`} points={[[i * 0.5, 0.012, 0.02], [i * 0.5, 0.012, ancho - 0.02]]} color="#cbd5e1" />
+      ))}
+      {Array.from({ length: Math.floor(ancho / 0.5) + 1 }, (_, i) => (
+        <Line key={`h${i}`} points={[[0.02, 0.012, i * 0.5], [largo - 0.02, 0.012, i * 0.5]]} color="#cbd5e1" />
+      ))}
+    </group>
+  );
+}
+
+/** Camión ISUZU completo: cabina en x&lt;0, carga en [0, largo]. */
+export function IsuzuTruckVisual({
   largo,
   ancho,
   alto,
@@ -14,127 +103,87 @@ export function CargaContainer({
   ancho: number;
   alto: number;
 }) {
-  const cx = largo / 2;
-  const cy = alto / 2;
+  const cabLen = getCabLength(largo);
   const cz = ancho / 2;
-
-  const corners: [number, number, number][] = [
-    [0, 0, 0],
-    [largo, 0, 0],
-    [largo, 0, ancho],
-    [0, 0, ancho],
-    [0, alto, 0],
-    [largo, alto, 0],
-    [largo, alto, ancho],
-    [0, alto, ancho],
-  ];
-
-  const edges: [number, number, number][][] = [
-    [corners[0], corners[1], corners[2], corners[3], corners[0]],
-    [corners[4], corners[5], corners[6], corners[7], corners[4]],
-    [corners[0], corners[4]],
-    [corners[1], corners[5]],
-    [corners[2], corners[6]],
-    [corners[3], corners[7]],
-  ];
+  const wheelR = Math.min(0.22, alto * 0.11);
+  const cabCx = -cabLen / 2;
+  const truckCx = (largo - cabLen) / 2;
 
   return (
     <group>
-      {/* Suelo exterior */}
-      <mesh position={[cx, -0.03, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[largo + 2, ancho + 2]} />
+      {/* Suelo */}
+      <mesh position={[truckCx, -0.03, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[largo + cabLen + 2.5, ancho + 2]} />
         <meshStandardMaterial color="#e2e8f0" roughness={1} />
       </mesh>
 
-      {/* Piso de carga */}
-      <mesh position={[cx, 0.004, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[largo, ancho]} />
-        <meshStandardMaterial color={FLOOR} roughness={0.95} />
+      {/* Chasis */}
+      <mesh position={[truckCx, wheelR * 0.45, cz]}>
+        <boxGeometry args={[largo + cabLen, 0.06, ancho * 0.55]} />
+        <meshStandardMaterial color="#475569" metalness={0.35} roughness={0.55} />
       </mesh>
 
-      {/* Volumen de referencia (muy sutil) */}
-      <mesh position={[cx, cy, cz]}>
-        <boxGeometry args={[largo, alto, ancho]} />
-        <meshStandardMaterial color="#93c5fd" transparent opacity={0.04} depthWrite={false} />
-        <Edges color={EDGE} threshold={15} />
+      {/* ── Cabina (termina exactamente en x=0) ── */}
+      <group>
+        <RoundedBox
+          args={[cabLen, alto * 0.62, ancho * 0.9]}
+          radius={0.05}
+          smoothness={3}
+          position={[cabCx, alto * 0.34 + wheelR * 0.45, cz]}
+          castShadow
+        >
+          <meshStandardMaterial color="#f8fafc" roughness={0.25} metalness={0.05} />
+          <Edges color="#cbd5e1" threshold={15} />
+        </RoundedBox>
+        <RoundedBox
+          args={[cabLen * 0.88, alto * 0.28, ancho * 0.86]}
+          radius={0.04}
+          smoothness={3}
+          position={[cabCx + cabLen * 0.02, alto * 0.72 + wheelR * 0.45, cz]}
+        >
+          <meshStandardMaterial color={ISUZU_RED} roughness={0.35} />
+        </RoundedBox>
+        <mesh position={[cabCx + cabLen * 0.15, alto * 0.65 + wheelR * 0.45, cz + ancho * 0.44]}>
+          <boxGeometry args={[cabLen * 0.35, alto * 0.2, 0.04]} />
+          <meshStandardMaterial color="#bae6fd" transparent opacity={0.75} />
+        </mesh>
+        <mesh position={[cabCx - cabLen * 0.48, alto * 0.28 + wheelR * 0.45, cz]}>
+          <boxGeometry args={[0.06, alto * 0.35, ancho * 0.65]} />
+          <meshStandardMaterial color="#334155" roughness={0.7} />
+        </mesh>
+      </group>
+
+      {/* Ruedas */}
+      <Wheel x={cabCx - cabLen * 0.28} z={cz - ancho * 0.38} r={wheelR} />
+      <Wheel x={cabCx - cabLen * 0.28} z={cz + ancho * 0.38} r={wheelR} />
+      <Wheel x={cabCx + cabLen * 0.22} z={cz - ancho * 0.38} r={wheelR} />
+      <Wheel x={cabCx + cabLen * 0.22} z={cz + ancho * 0.38} r={wheelR} />
+      <Wheel x={largo * 0.78} z={cz - ancho * 0.38} r={wheelR * 1.05} />
+      <Wheel x={largo * 0.78} z={cz + ancho * 0.38} r={wheelR * 1.05} />
+
+      {/* Franja ISUZU en flanco */}
+      <mesh position={[largo * 0.55, alto * 0.55, ancho - 0.01]}>
+        <boxGeometry args={[largo * 0.7, 0.08, 0.015]} />
+        <meshStandardMaterial color={ISUZU_RED} />
       </mesh>
 
-      {/* Aristas principales más gruesas */}
-      {edges.map((pts, i) => (
-        <Line key={i} points={pts} color={EDGE} lineWidth={2} />
-      ))}
-
-      {/* Puerta de carga (x=0) resaltada */}
-      <Line
-        points={[
-          [0, 0, 0],
-          [0, alto, 0],
-          [0, alto, ancho],
-          [0, 0, ancho],
-          [0, 0, 0],
-        ]}
-        color="#c8102e"
-        lineWidth={2.5}
-      />
-
-      {/* Rejilla cada 0.5 m */}
-      {Array.from({ length: Math.floor(largo / 0.5) + 1 }, (_, i) => (
-        <Line
-          key={`gx${i}`}
-          points={[[i * 0.5, 0.012, 0], [i * 0.5, 0.012, ancho]]}
-          color="#94a3b8"
-          transparent
-          opacity={0.55}
-        />
-      ))}
-      {Array.from({ length: Math.floor(ancho / 0.5) + 1 }, (_, i) => (
-        <Line
-          key={`gz${i}`}
-          points={[[0, 0.012, i * 0.5], [largo, 0.012, i * 0.5]]}
-          color="#94a3b8"
-          transparent
-          opacity={0.55}
-        />
-      ))}
-
-      {/* Etiqueta de dimensiones */}
-      <Text
-        position={[cx, alto + 0.12, cz]}
-        fontSize={Math.min(largo, ancho, alto) * 0.09}
-        color="#475569"
-        anchorX="center"
-        anchorY="bottom"
-      >
-        {`${largo.toFixed(2)} × ${ancho.toFixed(2)} × ${alto.toFixed(2)} m`}
-      </Text>
+      <TrailerCargoBox largo={largo} ancho={ancho} alto={alto} />
     </group>
   );
 }
 
-export const IsuzuTruck = CargaContainer;
+export const CargaContainer = IsuzuTruckVisual;
+export const IsuzuTruck = IsuzuTruckVisual;
 
 const TIPO_COLOR: Record<string, string> = {
-  pequena: '#dc2626',
-  mediana: '#ca8a04',
-  grande: '#2563eb',
-  tarima: '#ea580c',
+  pequena: '#ef4444',
+  mediana: '#eab308',
+  grande: '#3b82f6',
+  tarima: '#fb923c',
 };
 
 function shortLabel(text: string, max = 12): string {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
-}
-
-function clampBulto(
-  bulto: Pick<BultoColocado, 'x' | 'y' | 'z' | 'largo' | 'ancho' | 'alto'>,
-  box: { largo: number; ancho: number; alto: number },
-) {
-  const x = Math.max(0, Math.min(bulto.x, box.largo - 0.01));
-  const y = Math.max(0, Math.min(bulto.y, box.alto - 0.01));
-  const z = Math.max(0, Math.min(bulto.z, box.ancho - 0.01));
-  const largo = Math.min(bulto.largo, box.largo - x);
-  const ancho = Math.min(bulto.ancho, box.ancho - z);
-  const alto = Math.min(bulto.alto, box.alto - y);
-  return { x, y, z, largo, ancho, alto };
 }
 
 export function CargoBulto({
@@ -152,42 +201,36 @@ export function CargoBulto({
   tipo?: string;
   showLabel?: boolean;
 }) {
-  const c = clampBulto(bulto, box);
-  const cx = c.x + c.largo / 2;
-  const cy = c.y + c.alto / 2;
-  const cz = c.z + c.ancho / 2;
+  const x = Math.max(0, Math.min(bulto.x, box.largo - 0.01));
+  const y = Math.max(0, Math.min(bulto.y, box.alto - 0.01));
+  const z = Math.max(0, Math.min(bulto.z, box.ancho - 0.01));
+  const bl = Math.min(bulto.largo, box.largo - x);
+  const bh = Math.min(bulto.alto, box.alto - y);
+  const bw = Math.min(bulto.ancho, box.ancho - z);
+
+  const cx = x + bl / 2;
+  const cy = y + bh / 2;
+  const cz = z + bw / 2;
   const fill = highlighted ? '#f97316' : (TIPO_COLOR[tipo || ''] || bulto.color);
-  const opacity = dimmed ? 0.2 : 1;
-  const fontSize = Math.min(c.largo, c.alto, c.ancho) * 0.11;
+  const opacity = dimmed ? 0.18 : 0.95;
+  const fontSize = Math.min(bl, bh, bw) * 0.1;
 
   return (
     <group position={[cx, cy, cz]}>
-      <RoundedBox
-        args={[c.largo * 0.96, c.alto * 0.96, c.ancho * 0.96]}
-        radius={0.008}
-        smoothness={2}
-        castShadow
-        receiveShadow
-      >
-        <meshStandardMaterial
-          color={fill}
-          roughness={0.35}
-          metalness={0.02}
-          transparent={dimmed}
-          opacity={opacity}
-        />
-        <Edges color="#1e293b" threshold={12} />
+      <RoundedBox args={[bl * 0.96, bh * 0.96, bw * 0.96]} radius={0.01} smoothness={2} castShadow receiveShadow>
+        <meshStandardMaterial color={fill} roughness={0.4} transparent opacity={opacity} />
+        <Edges color="#1e293b" threshold={15} />
       </RoundedBox>
       {showLabel && fontSize > 0.03 && !dimmed && (
         <Text
-          position={[0, c.alto * 0.48, 0]}
+          position={[0, bh * 0.46, 0]}
           rotation={[-Math.PI / 2, 0, 0]}
           fontSize={fontSize}
-          maxWidth={c.largo * 0.92}
+          maxWidth={bl * 0.9}
           color="#fff"
           anchorX="center"
           anchorY="middle"
-          outlineWidth={fontSize * 0.07}
+          outlineWidth={fontSize * 0.06}
           outlineColor="#1e293b"
         >
           {shortLabel(bulto.label)}
