@@ -1,0 +1,262 @@
+.cubicaje {
+  padding: 2rem 2.5rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.cubicaje-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.cubicaje-header h1 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.35rem;
+}
+
+.cubicaje-lead {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  max-width: 42rem;
+}
+
+.cubicaje-cliente-link {
+  font-size: 0.875rem;
+  color: var(--primary);
+  text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.cubicaje-cliente-link:hover {
+  border-color: var(--primary);
+}
+
+.cubicaje-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 280px) 1fr minmax(220px, 260px);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .cubicaje-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cubicaje-panel {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.cubicaje-panel h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.cubicaje-panel h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 1rem 0 0.5rem;
+  color: var(--text-muted);
+}
+
+.cubicaje-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.85rem;
+}
+
+.cubicaje-field input,
+.cubicaje-field select {
+  font-weight: 400;
+  color: var(--text);
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: #fff;
+}
+
+.cubicaje-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.cubicaje-dims-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: -0.35rem 0 0.85rem;
+}
+
+.cubicaje-calc-btn {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.cubicaje-error {
+  margin-top: 0.75rem;
+  color: var(--primary);
+  font-size: 0.85rem;
+}
+
+.cubicaje-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 480px;
+}
+
+.cubicaje-view-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.cubicaje-view-btn {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.cubicaje-view-btn.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(200, 16, 46, 0.06);
+  font-weight: 600;
+}
+
+.cubicaje-canvas-wrap {
+  flex: 1;
+  min-height: 420px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.cubicaje-canvas-placeholder {
+  height: 100%;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 2rem;
+}
+
+.cubicaje-canvas-placeholder span {
+  font-size: 2.5rem;
+  opacity: 0.5;
+}
+
+.cubicaje-muted {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.cubicaje-msg {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.cubicaje-msg.ok {
+  background: rgba(34, 197, 94, 0.1);
+  color: #166534;
+}
+
+.cubicaje-msg.warn {
+  background: rgba(234, 179, 8, 0.12);
+  color: #854d0e;
+}
+
+.cubicaje-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.cubicaje-stats div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.cubicaje-stats dt {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.cubicaje-stats dd {
+  font-weight: 600;
+  text-align: right;
+}
+
+.cubicaje-stats .warn-text {
+  color: var(--primary);
+}
+
+.cubicaje-bultos-list {
+  list-style: none;
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cubicaje-bultos-list li {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.78rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.cubicaje-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.cubicaje-bulto-pos {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.cubicaje-warn-inline {
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  color: #854d0e;
+}

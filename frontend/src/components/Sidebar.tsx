@@ -50,6 +50,14 @@ export function Sidebar() {
           <span className="nav-icon">⚖️</span>
           <span className="nav-text">Comparativa</span>
         </NavLink>
+        <NavLink
+          to="/cubicaje"
+          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          title="Cubicaje 3D"
+        >
+          <span className="nav-icon">📦</span>
+          <span className="nav-text">Cubicaje 3D</span>
+        </NavLink>
         <NavLink to="/crm" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} title="CRM">
           <span className="nav-icon">👥</span>
           <span className="nav-text">CRM</span>

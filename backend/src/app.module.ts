@@ -8,6 +8,7 @@ import { AssistantModule } from './assistant/assistant.module';
 import { ClientesModule } from './clientes/clientes.module';
 import { CarroceriasModule } from './carrocerias/carrocerias.module';
 import { ComparativaModule } from './comparativa/comparativa.module';
+import { CubicajeModule } from './cubicaje/cubicaje.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ComparativaModule } from './comparativa/comparativa.module';
     ClientesModule,
     CarroceriasModule,
     ComparativaModule,
+    CubicajeModule,
   ],
   controllers: [AppController],
 })

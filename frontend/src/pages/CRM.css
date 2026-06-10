@@ -217,6 +217,19 @@
   margin: 0 0 0.75rem;
 }
 
+.crm-dist-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.crm-cubicaje-link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
 .crm-chat {
   max-height: 320px;
   overflow-y: auto;

@@ -340,16 +340,24 @@ export function ClienteDetalle() {
           <p className="crm-dist-sub">
             Genera la vista de cómo quedarían las tarimas en el camión recomendado.
           </p>
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={handleGenerarDistribucion}
-            disabled={
-              distribucionLoading || !cliente.modeloRecomendado || !cliente.cantidadTarimas
-            }
-          >
-            {distribucionLoading ? 'Generando…' : 'Generar distribución'}
-          </button>
+          <div className="crm-dist-actions">
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleGenerarDistribucion}
+              disabled={
+                distribucionLoading || !cliente.modeloRecomendado || !cliente.cantidadTarimas
+              }
+            >
+              {distribucionLoading ? 'Generando…' : 'Generar distribución 2D'}
+            </button>
+            <Link
+              to={`/cubicaje?cliente=${id}`}
+              className="btn-secondary crm-cubicaje-link"
+            >
+              Abrir cubicaje 3D
+            </Link>
+          </div>
           {distribucion && (
             <div className="crm-dist-result">
               <p className={distribucion.cabenTodas ? 'crm-dist-ok' : 'crm-dist-warn'}>
