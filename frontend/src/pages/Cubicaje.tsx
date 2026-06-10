@@ -5,6 +5,7 @@ import { CubicajeScene, CubicajeSceneFromResult } from '../components/CubicajeSc
 import { CubicajeInventoryCard } from '../components/CubicajeInventoryCard';
 import type { CameraPreset, CubicajeResult, InventarioCounts } from '../types/cubicaje';
 import { CAMERA_PRESETS, TIPOS_BULTO, inventarioToBultos } from '../types/cubicaje';
+import { calcMetrosVacios, calcVolumenUsado } from '../utils/cubicajeAxleWeight';
 import './Cubicaje.css';
 
 interface ModeloOption {
@@ -38,9 +39,13 @@ export function Cubicaje() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CubicajeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [cameraPreset, setCameraPreset] = useState<CameraPreset>('side');
+  const [cameraPreset, setCameraPreset] = useState<CameraPreset>('iso');
   const [filaFilter, setFilaFilter] = useState<number | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [truckSearch, setTruckSearch] = useState('');
+  const [showPlacedList, setShowPlacedList] = useState(false);
+  const [showWeight, setShowWeight] = useState(true);
+  const [showLabels, setShowLabels] = useState(true);
 
   useEffect(() => {
     Promise.all([
@@ -166,6 +171,33 @@ export function Cubicaje() {
     return Array.from({ length: Math.min(result.filas, 4) }, (_, i) => i + 1);
   }, [result]);
 
+  const filteredModelos = useMemo(() => {
+    const q = truckSearch.trim().toLowerCase();
+    if (!q) return modelos;
+    return modelos.filter(
+      (m) =>
+        m.label.toLowerCase().includes(q) ||
+        (m.linea && m.linea.toLowerCase().includes(q)),
+    );
+  }, [modelos, truckSearch]);
+
+  const espacioLibre = result
+    ? Math.max(0, 100 - result.utilizacionVolumen)
+    : null;
+
+  const volStats = useMemo(() => {
+    if (!previewContenedor) return null;
+    const total = previewContenedor.largo * previewContenedor.ancho * previewContenedor.alto;
+    const used = result ? calcVolumenUsado(result.bultos) : 0;
+    return { total: Math.round(total * 100) / 100, used };
+  }, [previewContenedor, result]);
+
+  const metrosVacios = result
+    ? calcMetrosVacios(result.bultos, result.contenedor.largo)
+    : previewContenedor?.largo ?? 0;
+
+  const GROUP_LETTERS = ['A', 'B', 'C', 'D'] as const;
+
   return (
     <div className="page cubicaje cubicaje-dashboard">
       <header className="cubicaje-topbar">
@@ -197,9 +229,42 @@ export function Cubicaje() {
       <div className="cubicaje-dashboard-grid">
         {/* Columna izquierda: selector de camión */}
         <aside className="cubicaje-trucks">
-          <h2>Camiones ISUZU</h2>
+          {result ? (
+            <>
+              <h2>Grupos</h2>
+              <ul className="cubicaje-group-list">
+                {(['pequena', 'mediana', 'grande', 'tarima'] as const).map((tipo, idx) => {
+                  const total = inventario[tipo];
+                  if (total === 0) return null;
+                  const placed = statsByTipo[tipo]?.placed ?? 0;
+                  const preset = TIPOS_BULTO[tipo];
+                  return (
+                    <li key={tipo} className="cubicaje-group-item">
+                      <span className="cubicaje-group-badge" style={{ background: preset.color }}>
+                        {GROUP_LETTERS[idx]}
+                      </span>
+                      <span className="cubicaje-group-name">{preset.label}</span>
+                      <span className={`cubicaje-group-count ${placed === total ? 'ok' : 'warn'}`}>
+                        {placed}/{total}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+              <h2 className="cubicaje-trucks-sub">Camión</h2>
+            </>
+          ) : (
+            <h2>Flota ISUZU</h2>
+          )}
+          <input
+            type="search"
+            className="cubicaje-truck-search"
+            placeholder="Buscar modelo…"
+            value={truckSearch}
+            onChange={(e) => setTruckSearch(e.target.value)}
+          />
           <ul className="cubicaje-truck-list">
-            {modelos.map((m) => (
+            {filteredModelos.map((m) => (
               <li key={m.key}>
                 <button
                   type="button"
@@ -232,40 +297,70 @@ export function Cubicaje() {
 
         {/* Centro: visualización 3D */}
         <main className="cubicaje-stage">
-          <div className="cubicaje-stage-toolbar">
-            <div className="cubicaje-view-tabs">
-              {(Object.keys(CAMERA_PRESETS) as CameraPreset[]).map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  className={`cubicaje-view-tab ${cameraPreset === key ? 'active' : ''}`}
-                  onClick={() => setCameraPreset(key)}
-                >
-                  {CAMERA_PRESETS[key].label}
-                </button>
-              ))}
+          <div className="cubicaje-vehicle-bar">
+            <div className="cubicaje-vehicle-info">
+              <h2 className="cubicaje-stage-title">{modelo || 'Selecciona un camión'}</h2>
+              {previewContenedor && (
+                <p className="cubicaje-vehicle-dims">
+                  {(previewContenedor.largo * 100).toFixed(1)} ×{' '}
+                  {(previewContenedor.ancho * 100).toFixed(1)} ×{' '}
+                  {(previewContenedor.alto * 100).toFixed(1)} cm
+                </p>
+              )}
             </div>
-            {filaButtons.length > 0 && (
-              <div className="cubicaje-row-tabs">
-                <button
-                  type="button"
-                  className={`cubicaje-row-tab ${filaFilter === null ? 'active' : ''}`}
-                  onClick={() => setFilaFilter(null)}
-                >
-                  Todas
-                </button>
-                {filaButtons.map((f) => (
-                  <button
-                    key={f}
-                    type="button"
-                    className={`cubicaje-row-tab ${filaFilter === f ? 'active' : ''}`}
-                    onClick={() => setFilaFilter(f === filaFilter ? null : f)}
-                  >
-                    Fila {f}
-                  </button>
-                ))}
-              </div>
-            )}
+            <table className="cubicaje-stats-table">
+              <thead>
+                <tr>
+                  <th>Peso</th>
+                  <th>Volumen</th>
+                  <th>Metros vacíos</th>
+                  <th>Colocados</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    {result ? (
+                      <>
+                        <strong className={result.pesoOk ? '' : 'warn'}>
+                          {Math.round(result.pesoColocadoKg).toLocaleString('es-MX')}
+                        </strong>
+                        {result.pesoMaxKg != null && (
+                          <span className="cubicaje-stat-max">
+                            {' '}
+                            / {Math.round(result.pesoMaxKg).toLocaleString('es-MX')} kg
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td>
+                    {volStats ? (
+                      <>
+                        <strong>{volStats.used}</strong>
+                        <span className="cubicaje-stat-max"> / {volStats.total} m³</span>
+                      </>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td>
+                    <strong>{metrosVacios.toFixed(2)}</strong> m
+                  </td>
+                  <td>
+                    {result ? (
+                      <strong>
+                        {result.totalColocados}/{result.totalSolicitados}
+                      </strong>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           <div className="cubicaje-canvas-wrap">
@@ -274,16 +369,19 @@ export function Cubicaje() {
                 {result ? (
                   <CubicajeSceneFromResult
                     result={result}
-                    tarimaDims={{ largo: tarimaLargo, ancho: tarimaAncho, alto: tarimaAlto }}
                     preset={cameraPreset}
                     filaFilter={filaFilter}
                     highlightedId={highlightedId}
+                    showWeight={showWeight}
+                    showLabels={showLabels}
                   />
                 ) : (
                   <CubicajeScene
                     contenedor={previewContenedor}
                     modeloLabel={modelo}
                     preset={cameraPreset}
+                    showWeight={false}
+                    showLabels={false}
                   />
                 )}
                 {loading && (
@@ -292,9 +390,57 @@ export function Cubicaje() {
                     <span>Calculando cubicaje…</span>
                   </div>
                 )}
-                <div className="cubicaje-canvas-hint">
-                  Arrastra para rotar · Rueda para zoom
-                </div>
+                <aside className="cubicaje-view-rail" aria-label="Controles de vista">
+                  <p className="cubicaje-view-rail-title">Vistas</p>
+                  {(Object.keys(CAMERA_PRESETS) as CameraPreset[]).map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className={`cubicaje-view-icon ${cameraPreset === key ? 'active' : ''}`}
+                      onClick={() => setCameraPreset(key)}
+                      title={CAMERA_PRESETS[key].label}
+                    >
+                      {key === 'side' && (
+                        <svg viewBox="0 0 24 24" width="22" height="22">
+                          <rect x="2" y="8" width="20" height="10" rx="1" fill="currentColor" opacity="0.3" />
+                          <rect x="2" y="8" width="6" height="8" rx="1" fill="currentColor" />
+                        </svg>
+                      )}
+                      {key === 'top' && (
+                        <svg viewBox="0 0 24 24" width="22" height="22">
+                          <rect x="4" y="4" width="16" height="16" rx="1" fill="none" stroke="currentColor" strokeWidth="2" />
+                          <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" strokeWidth="1.5" />
+                          <line x1="12" y1="4" x2="12" y2="20" stroke="currentColor" strokeWidth="1.5" />
+                        </svg>
+                      )}
+                      {key === 'iso' && (
+                        <svg viewBox="0 0 24 24" width="22" height="22">
+                          <path d="M4 18 L12 6 L20 18 Z" fill="none" stroke="currentColor" strokeWidth="2" />
+                          <rect x="8" y="14" width="8" height="4" fill="currentColor" opacity="0.4" />
+                        </svg>
+                      )}
+                      <span>{CAMERA_PRESETS[key].label}</span>
+                    </button>
+                  ))}
+                  <p className="cubicaje-view-rail-title">Opciones</p>
+                  <label className="cubicaje-view-toggle">
+                    <input
+                      type="checkbox"
+                      checked={showWeight}
+                      onChange={(e) => setShowWeight(e.target.checked)}
+                    />
+                    Peso en ejes
+                  </label>
+                  <label className="cubicaje-view-toggle">
+                    <input
+                      type="checkbox"
+                      checked={showLabels}
+                      onChange={(e) => setShowLabels(e.target.checked)}
+                    />
+                    Etiquetas
+                  </label>
+                </aside>
+                <p className="cubicaje-disclaimer">La carga real puede variar ligeramente</p>
               </>
             ) : (
               <div className="cubicaje-canvas-placeholder">
@@ -304,27 +450,42 @@ export function Cubicaje() {
             )}
           </div>
 
+          {filaButtons.length > 0 && (
+            <div className="cubicaje-row-tabs-bar">
+              <button
+                type="button"
+                className={`cubicaje-row-tab ${filaFilter === null ? 'active' : ''}`}
+                onClick={() => setFilaFilter(null)}
+              >
+                Todas
+              </button>
+              {filaButtons.map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  className={`cubicaje-row-tab ${filaFilter === f ? 'active' : ''}`}
+                  onClick={() => setFilaFilter(f === filaFilter ? null : f)}
+                >
+                  Fila {f}
+                </button>
+              ))}
+            </div>
+          )}
+
           {(result || previewContenedor) && (
             <footer className="cubicaje-metrics-bar">
               {result ? (
                 <>
                   <div className="cubicaje-metric">
-                    <span className="cubicaje-metric-label">Peso</span>
-                    <strong className={result.pesoOk ? '' : 'warn'}>
-                      {Math.round(result.pesoColocadoKg)} kg
-                      {result.pesoMaxKg != null && ` / ~${Math.round(result.pesoMaxKg)} kg`}
-                    </strong>
-                  </div>
-                  <div className="cubicaje-metric">
-                    <span className="cubicaje-metric-label">Volumen</span>
+                    <span className="cubicaje-metric-label">Ocupación volumétrica</span>
                     <strong>{result.utilizacionVolumen}%</strong>
                   </div>
-                  <div className="cubicaje-metric">
-                    <span className="cubicaje-metric-label">Colocados</span>
-                    <strong>
-                      {result.totalColocados}/{result.totalSolicitados}
-                    </strong>
-                  </div>
+                  {espacioLibre != null && (
+                    <div className="cubicaje-metric">
+                      <span className="cubicaje-metric-label">Espacio libre</span>
+                      <strong>{espacioLibre}%</strong>
+                    </div>
+                  )}
                   <div className="cubicaje-metric cubicaje-metric--msg">
                     <span className={result.cabenTodos ? 'ok' : 'warn'}>{result.mensaje}</span>
                     {result.modeloSugerido && result.sugerencia && (
@@ -361,11 +522,11 @@ export function Cubicaje() {
             <h2>Carga a colocar</h2>
             <button
               type="button"
-              className="btn-primary cubicaje-optimize-btn"
+              className="btn-primary cubicaje-optimize-btn cubicaje-load-btn"
               onClick={() => void handleCalcular()}
               disabled={loading || !modelo || totalBultos < 1}
             >
-              {loading ? 'Optimizando…' : 'Optimizar carga'}
+              {loading ? 'Cargando…' : 'Cargar'}
             </button>
           </div>
 
@@ -437,22 +598,31 @@ export function Cubicaje() {
 
           {result && result.bultos.length > 0 && (
             <div className="cubicaje-placed-list">
-              <h3>Colocados ({result.bultos.length})</h3>
-              <ul>
-                {result.bultos.map((b) => (
-                  <li key={b.id}>
-                    <button
-                      type="button"
-                      className={highlightedId === b.id ? 'active' : ''}
-                      onClick={() => setHighlightedId(highlightedId === b.id ? null : b.id)}
-                    >
-                      <span className="cubicaje-swatch" style={{ background: b.color }} />
-                      <span>{b.label}</span>
-                      <span className="cubicaje-bulto-pos">F{b.fila}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <button
+                type="button"
+                className="cubicaje-placed-toggle"
+                onClick={() => setShowPlacedList((v) => !v)}
+              >
+                <h3>Colocados ({result.bultos.length})</h3>
+                <span>{showPlacedList ? '▲' : '▼'}</span>
+              </button>
+              {showPlacedList && (
+                <ul>
+                  {result.bultos.map((b) => (
+                    <li key={b.id}>
+                      <button
+                        type="button"
+                        className={highlightedId === b.id ? 'active' : ''}
+                        onClick={() => setHighlightedId(highlightedId === b.id ? null : b.id)}
+                      >
+                        <span className="cubicaje-swatch" style={{ background: b.color }} />
+                        <span>{b.label}</span>
+                        <span className="cubicaje-bulto-pos">F{b.fila}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
         </aside>

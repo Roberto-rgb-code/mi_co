@@ -72,7 +72,7 @@
 
 .cubicaje-dashboard-grid {
   display: grid;
-  grid-template-columns: 220px 1fr 300px;
+  grid-template-columns: 240px 1fr 320px;
   flex: 1;
   min-height: 0;
   gap: 0;
@@ -97,8 +97,18 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
-  padding: 0 0.5rem 0.75rem;
+  padding: 0 0.5rem 0.5rem;
   font-weight: 700;
+}
+
+.cubicaje-truck-search {
+  width: calc(100% - 1rem);
+  margin: 0 0.5rem 0.65rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  background: #fafafa;
 }
 
 .cubicaje-truck-list {
@@ -153,23 +163,88 @@
   color: var(--text-muted);
 }
 
-/* Escenario central */
+/* Escenario central — estilo EasyCargo */
 .cubicaje-stage {
   display: flex;
   flex-direction: column;
-  min-height: 560px;
-  background: linear-gradient(180deg, #eef1f5 0%, #e8ecf1 100%);
+  min-height: 620px;
+  background: #e8ecf1;
+}
+
+.cubicaje-vehicle-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1.25rem;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+
+.cubicaje-vehicle-info {
+  min-width: 180px;
+}
+
+.cubicaje-vehicle-dims {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+.cubicaje-stats-table {
+  flex: 1;
+  min-width: 320px;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.cubicaje-stats-table th {
+  text-align: left;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  font-weight: 700;
+  padding: 0 1rem 0.35rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.cubicaje-stats-table td {
+  padding: 0.35rem 1rem 0 0;
+  vertical-align: baseline;
+}
+
+.cubicaje-stats-table strong {
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.cubicaje-stats-table strong.warn {
+  color: var(--primary);
+}
+
+.cubicaje-stat-max {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.cubicaje-stage-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+  margin: 0;
 }
 
 .cubicaje-canvas-wrap {
   flex: 1;
-  min-height: 480px;
-  margin: 0.75rem;
-  border-radius: 14px;
+  min-height: 540px;
+  margin: 0.75rem 1rem;
+  border-radius: 4px;
   overflow: hidden;
-  border: 1px solid #d1d5db;
-  background: #eef1f5;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid #cbd5e1;
+  background: #e8ecf1;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
   position: relative;
 }
 
@@ -211,39 +286,167 @@
   display: block;
 }
 
-.cubicaje-stage-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  padding: 0.65rem 1rem;
-  background: #fff;
+/* Grupos (EasyCargo) */
+.cubicaje-group-list {
+  list-style: none;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border);
-  align-items: center;
 }
 
-.cubicaje-view-tabs,
-.cubicaje-row-tabs {
+.cubicaje-group-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.78rem;
+}
+
+.cubicaje-group-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.72rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cubicaje-group-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cubicaje-group-count {
+  font-weight: 700;
+  font-size: 0.72rem;
+}
+
+.cubicaje-group-count.ok {
+  color: #166534;
+}
+
+.cubicaje-group-count.warn {
+  color: #854d0e;
+}
+
+.cubicaje-trucks-sub {
+  font-size: 0.72rem !important;
+  padding-top: 0.5rem !important;
+}
+
+/* Rail de vistas (EasyCargo) */
+.cubicaje-view-rail {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 130px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem;
+  z-index: 3;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.cubicaje-view-rail-title {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin: 0.35rem 0 0.25rem;
+}
+
+.cubicaje-view-rail-title:first-child {
+  margin-top: 0;
+}
+
+.cubicaje-view-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.35rem 0.4rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-align: left;
+}
+
+.cubicaje-view-icon:hover {
+  background: var(--hover-bg);
+}
+
+.cubicaje-view-icon.active {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.cubicaje-view-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.68rem;
+  color: var(--text);
+  padding: 0.25rem 0;
+  cursor: pointer;
+}
+
+.cubicaje-disclaimer {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.62rem;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.75);
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cubicaje-row-tabs-bar {
   display: flex;
   gap: 0.35rem;
+  padding: 0.5rem 1rem;
+  background: #fff;
+  border-top: 1px solid var(--border);
   flex-wrap: wrap;
 }
 
-.cubicaje-view-tab,
+.cubicaje-load-btn {
+  border-radius: 999px !important;
+  padding: 0.65rem 1.25rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em;
+}
+
 .cubicaje-row-tab {
-  padding: 0.35rem 0.7rem;
+  padding: 0.35rem 0.75rem;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 6px;
   background: #fff;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   cursor: pointer;
   color: var(--text-muted);
 }
 
-.cubicaje-view-tab.active,
 .cubicaje-row-tab.active {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: rgba(200, 16, 46, 0.07);
+  border-color: #3b82f6;
+  color: #1d4ed8;
+  background: #eff6ff;
   font-weight: 600;
 }
 
@@ -363,10 +566,11 @@
 .cubicaje-inv-card {
   display: flex;
   gap: 0.65rem;
-  padding: 0.65rem;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: #fafafa;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
 .cubicaje-inv-preview {
@@ -519,8 +723,29 @@
 .cubicaje-unplaced ul,
 .cubicaje-placed-list ul {
   list-style: none;
-  max-height: 140px;
+  max-height: 120px;
   overflow-y: auto;
+}
+
+.cubicaje-placed-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.35rem 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.cubicaje-placed-toggle h3 {
+  margin: 0;
+}
+
+.cubicaje-placed-toggle span {
+  font-size: 0.65rem;
+  color: var(--text-muted);
 }
 
 .cubicaje-unplaced li {
@@ -549,7 +774,7 @@
 
 .cubicaje-placed-list li button:hover,
 .cubicaje-placed-list li button.active {
-  background: rgba(200, 16, 46, 0.08);
+  background: rgba(234, 88, 12, 0.1);
 }
 
 .cubicaje-swatch {

@@ -1,20 +1,20 @@
-import { Suspense, useMemo, useEffect } from 'react';
+import { Suspense, useEffect, useMemo } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls, ContactShadows, Environment } from '@react-three/drei';
+import { ContactShadows, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
-import type { BultoNoColocado, CameraPreset, CubicajeResult } from '../types/cubicaje';
-import { CAMERA_PRESETS } from '../types/cubicaje';
-import { IsuzuTruck, CargoBulto, UnplacedStack } from './IsuzuTruckModel';
+import type { CameraPreset, CubicajeResult } from '../types/cubicaje';
+import { IsuzuTruck, CargoBulto, AxleWeightIndicators } from './IsuzuTruckModel';
+import { computeAxleLoads } from '../utils/cubicajeAxleWeight';
 
 export interface CubicajeSceneProps {
   contenedor: CubicajeResult['contenedor'];
   modeloLabel?: string;
   bultos?: CubicajeResult['bultos'];
-  noColocados?: BultoNoColocado[];
-  tarimaDims?: { largo: number; ancho: number; alto: number };
   preset: CameraPreset;
   filaFilter?: number | null;
   highlightedId?: string | null;
+  showWeight?: boolean;
+  showLabels?: boolean;
 }
 
 function CameraRig({
@@ -24,61 +24,62 @@ function CameraRig({
   preset: CameraPreset;
   contenedor: CubicajeResult['contenedor'];
 }) {
-  const { camera } = useThree();
+  const { camera, size } = useThree();
   const { largo, ancho, alto } = contenedor;
-  const cx = largo / 2 - 0.5;
-  const cy = alto / 2;
+  const cx = largo * 0.42;
+  const cy = alto * 0.38;
   const cz = ancho / 2;
-  const scale = Math.max(largo + 2, ancho, alto, 4);
+  const span = largo + 4;
 
   useEffect(() => {
-    const [px, py, pz] = CAMERA_PRESETS[preset].position;
-    camera.position.set(cx + px * scale, cy + py * scale, cz + pz * scale);
-    camera.lookAt(cx, cy * 0.75, cz);
-    if ('updateProjectionMatrix' in camera) {
-      (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
-    }
-  }, [preset, cx, cy, cz, scale, camera]);
+    if (!(camera instanceof THREE.PerspectiveCamera)) return;
 
-  return (
-    <OrbitControls
-      target={[cx, cy * 0.75, cz]}
-      minDistance={scale * 0.28}
-      maxDistance={scale * 4.5}
-      enableDamping
-      dampingFactor={0.06}
-      maxPolarAngle={Math.PI / 2.05}
-    />
-  );
+    camera.fov = 32;
+    camera.aspect = size.width / Math.max(size.height, 1);
+    camera.near = 0.1;
+    camera.far = span * 8;
+
+    if (preset === 'side') {
+      camera.position.set(cx - 0.5, cy + 0.15, cz - span * 0.85);
+      camera.lookAt(cx, cy, cz);
+    } else if (preset === 'top') {
+      camera.position.set(cx, span * 1.1, cz + 0.01);
+      camera.lookAt(cx, 0, cz);
+    } else {
+      camera.position.set(cx + span * 0.55, cy + span * 0.38, cz + span * 0.42);
+      camera.lookAt(cx, cy * 0.85, cz);
+    }
+
+    camera.updateProjectionMatrix();
+  }, [preset, cx, cy, cz, span, camera, size]);
+
+  return null;
 }
 
 function SceneContent({
   contenedor,
-  modeloLabel,
   bultos = [],
-  noColocados = [],
-  tarimaDims = { largo: 1.2, ancho: 1, alto: 1.5 },
   preset,
   filaFilter,
   highlightedId,
+  showWeight = true,
+  showLabels = true,
 }: CubicajeSceneProps) {
-  const maxDim = Math.max(contenedor.largo, contenedor.ancho, contenedor.alto, 1);
+  const cabLen = Math.min(2.1, Math.max(1.55, contenedor.largo * 0.28));
+  const axles = useMemo(
+    () => computeAxleLoads(bultos, contenedor.largo, cabLen),
+    [bultos, contenedor.largo, cabLen],
+  );
 
   return (
     <>
-      <color attach="background" args={['#eef1f5']} />
-      <fog attach="fog" args={['#eef1f5', maxDim * 4, maxDim * 14]} />
-      <ambientLight intensity={0.55} />
-      <directionalLight
-        position={[maxDim * 1.5, maxDim * 2.5, maxDim * 1.2]}
-        intensity={1.25}
-        castShadow
-        shadow-mapSize={[1024, 1024]}
-      />
-      <directionalLight position={[-maxDim, maxDim, -maxDim * 0.8]} intensity={0.4} />
-      <Environment preset="city" />
+      <color attach="background" args={['#e8ecf1']} />
+      <ambientLight intensity={0.75} />
+      <directionalLight position={[12, 18, 8]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
+      <directionalLight position={[-8, 10, -6]} intensity={0.35} />
+      <PerspectiveCamera makeDefault position={[5, 4, 8]} fov={32} />
       <CameraRig preset={preset} contenedor={contenedor} />
-      <IsuzuTruck {...contenedor} modeloLabel={modeloLabel} />
+      <IsuzuTruck {...contenedor} />
       <ContactShadows
         position={[contenedor.largo / 2, 0, contenedor.ancho / 2]}
         opacity={0.35}
@@ -90,28 +91,27 @@ function SceneContent({
         <CargoBulto
           key={b.id}
           bulto={b}
+          tipo={b.tipo}
           dimmed={filaFilter != null && b.fila !== filaFilter}
           highlighted={highlightedId === b.id}
+          showLabel={showLabels}
         />
       ))}
-      {noColocados.length > 0 && (
-        <UnplacedStack items={noColocados} contenedor={contenedor} tarimaDims={tarimaDims} />
-      )}
+      <AxleWeightIndicators
+        axles={axles}
+        alto={contenedor.alto}
+        ancho={contenedor.ancho}
+        visible={showWeight && bultos.length > 0}
+      />
     </>
   );
 }
 
 export function CubicajeScene(props: CubicajeSceneProps) {
-  const maxDim = useMemo(
-    () => Math.max(props.contenedor.largo, props.contenedor.ancho, props.contenedor.alto, 1),
-    [props.contenedor],
-  );
-
   return (
     <Canvas
       shadows
-      dpr={[1, 2]}
-      camera={{ fov: 38, near: 0.05, far: maxDim * 30, position: [maxDim, maxDim * 0.8, maxDim * 1.5] }}
+      dpr={[1, 1.5]}
       style={{ width: '100%', height: '100%' }}
       gl={{ antialias: true, alpha: false }}
     >
@@ -124,23 +124,16 @@ export function CubicajeScene(props: CubicajeSceneProps) {
 
 export function CubicajeSceneFromResult({
   result,
-  tarimaDims,
   ...rest
 }: {
   result: CubicajeResult;
-  tarimaDims?: { largo: number; ancho: number; alto: number };
   preset: CameraPreset;
   filaFilter?: number | null;
   highlightedId?: string | null;
+  showWeight?: boolean;
+  showLabels?: boolean;
 }) {
   return (
-    <CubicajeScene
-      contenedor={result.contenedor}
-      modeloLabel={result.modelo}
-      bultos={result.bultos}
-      noColocados={result.noColocados}
-      tarimaDims={tarimaDims}
-      {...rest}
-    />
+    <CubicajeScene contenedor={result.contenedor} bultos={result.bultos} {...rest} />
   );
 }
