@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, OrthographicCamera } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import * as THREE from 'three';
 import type { CameraPreset, CubicajeResult } from '../types/cubicaje';
@@ -22,18 +22,22 @@ function getCameraFrame(contenedor: CubicajeResult['contenedor'], preset: Camera
   const cx = largo / 2;
   const cy = alto / 2;
   const cz = ancho / 2;
-  const span = Math.max(largo, ancho, alto, 2) + 1.2;
+  const span = Math.max(largo, ancho, alto, 1.5) + 0.8;
 
   let position: THREE.Vector3;
+  let ortho = false;
+
   if (preset === 'side') {
-    position = new THREE.Vector3(cx, cy, cz - span * 1.15);
+    position = new THREE.Vector3(cx, cy, cz - span * 1.35);
+    ortho = true;
   } else if (preset === 'top') {
-    position = new THREE.Vector3(cx, span * 1.25, cz);
+    position = new THREE.Vector3(cx, span * 1.4, cz);
+    ortho = true;
   } else {
-    position = new THREE.Vector3(cx + span * 0.85, cy + span * 0.55, cz + span * 0.85);
+    position = new THREE.Vector3(cx + span * 0.9, cy + span * 0.5, cz + span * 0.75);
   }
 
-  return { target: new THREE.Vector3(cx, cy, cz), position, span };
+  return { target: new THREE.Vector3(cx, cy, cz), position, span, ortho };
 }
 
 function CameraRig({
@@ -47,31 +51,74 @@ function CameraRig({
   zoomFactor?: number;
   viewResetKey?: number;
 }) {
-  const { camera, size } = useThree();
+  const { camera, size, set } = useThree();
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const frame = useMemo(() => getCameraFrame(contenedor, preset), [contenedor, preset]);
 
   useEffect(() => {
-    if (!(camera instanceof THREE.PerspectiveCamera)) return;
+    if (frame.ortho) {
+      if (!(camera instanceof THREE.OrthographicCamera)) {
+        const ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, frame.span * 12);
+        set({ camera: ortho });
+      }
+    } else if (!(camera instanceof THREE.PerspectiveCamera)) {
+      const persp = new THREE.PerspectiveCamera(36, size.width / Math.max(size.height, 1), 0.05, frame.span * 12);
+      set({ camera: persp });
+    }
+  }, [frame.ortho, frame.span, camera, set, size]);
 
-    camera.fov = 38;
-    camera.aspect = size.width / Math.max(size.height, 1);
-    camera.near = 0.05;
-    camera.far = frame.span * 10;
-    camera.updateProjectionMatrix();
+  useEffect(() => {
+    const aspect = size.width / Math.max(size.height, 1);
+    const pad = 1.18 / zoomFactor;
 
-    const dir = frame.position.clone().sub(frame.target).normalize();
-    const dist = frame.position.distanceTo(frame.target) / zoomFactor;
-    camera.position.copy(frame.target).add(dir.multiplyScalar(dist));
+    if (camera instanceof THREE.OrthographicCamera) {
+      const { largo, ancho, alto } = contenedor;
+      let halfW: number;
+      let halfH: number;
+
+      if (preset === 'side') {
+        halfW = (largo * pad) / 2;
+        halfH = (alto * pad) / 2;
+      } else {
+        halfW = (largo * pad) / 2;
+        halfH = (ancho * pad) / 2;
+      }
+
+      if (halfW / halfH > aspect) {
+        halfH = halfW / aspect;
+      } else {
+        halfW = halfH * aspect;
+      }
+
+      camera.left = -halfW;
+      camera.right = halfW;
+      camera.top = halfH;
+      camera.bottom = -halfH;
+      camera.near = 0.1;
+      camera.far = frame.span * 12;
+      camera.position.copy(frame.position);
+      camera.lookAt(frame.target);
+      camera.updateProjectionMatrix();
+    } else if (camera instanceof THREE.PerspectiveCamera) {
+      camera.fov = 36;
+      camera.aspect = aspect;
+      camera.near = 0.05;
+      camera.far = frame.span * 12;
+      camera.updateProjectionMatrix();
+
+      const dir = frame.position.clone().sub(frame.target).normalize();
+      const dist = frame.position.distanceTo(frame.target) / zoomFactor;
+      camera.position.copy(frame.target).add(dir.multiplyScalar(dist));
+    }
 
     const controls = controlsRef.current;
     if (controls) {
       controls.target.copy(frame.target);
-      controls.minDistance = frame.span * 0.25;
-      controls.maxDistance = frame.span * 4;
+      controls.minDistance = frame.span * 0.2;
+      controls.maxDistance = frame.span * 5;
       controls.update();
     }
-  }, [preset, zoomFactor, viewResetKey, frame, camera, size]);
+  }, [preset, zoomFactor, viewResetKey, frame, camera, size, contenedor]);
 
   return (
     <OrbitControls
@@ -82,7 +129,7 @@ function CameraRig({
       enableZoom
       enableRotate
       maxPolarAngle={Math.PI / 2.01}
-      minPolarAngle={0.08}
+      minPolarAngle={0.05}
     />
   );
 }
@@ -99,11 +146,12 @@ function SceneContent({
 }: CubicajeSceneProps) {
   return (
     <>
-      <color attach="background" args={['#eef2f6']} />
-      <ambientLight intensity={0.9} />
-      <directionalLight position={[8, 12, 6]} intensity={1.1} castShadow />
-      <directionalLight position={[-5, 8, -4]} intensity={0.3} />
-      <PerspectiveCamera makeDefault fov={38} />
+      <color attach="background" args={['#f8fafc']} />
+      <ambientLight intensity={1} />
+      <hemisphereLight args={['#ffffff', '#cbd5e1', 0.45]} />
+      <directionalLight position={[6, 10, 4]} intensity={0.85} castShadow />
+      <directionalLight position={[-4, 6, -3]} intensity={0.25} />
+      <OrthographicCamera makeDefault position={[0, 0, 5]} near={0.1} far={100} />
       <CameraRig
         preset={preset}
         contenedor={contenedor}
@@ -115,6 +163,7 @@ function SceneContent({
         <CargoBulto
           key={b.id}
           bulto={b}
+          box={contenedor}
           tipo={b.tipo}
           dimmed={filaFilter != null && b.fila !== filaFilter}
           highlighted={highlightedId === b.id}
@@ -129,7 +178,7 @@ export function CubicajeScene(props: CubicajeSceneProps) {
   return (
     <Canvas
       shadows
-      dpr={[1, 1.5]}
+      dpr={[1, 2]}
       style={{ width: '100%', height: '100%', touchAction: 'none' }}
       gl={{ antialias: true, alpha: false }}
     >

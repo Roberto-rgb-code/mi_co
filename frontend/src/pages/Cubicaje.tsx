@@ -39,7 +39,7 @@ export function Cubicaje() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CubicajeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [cameraPreset, setCameraPreset] = useState<CameraPreset>('iso');
+  const [cameraPreset, setCameraPreset] = useState<CameraPreset>('side');
   const [filaFilter, setFilaFilter] = useState<number | null>(null);
   const [showLabels, setShowLabels] = useState(true);
   const [zoomFactor, setZoomFactor] = useState(1);
