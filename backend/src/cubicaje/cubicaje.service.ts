@@ -6,11 +6,13 @@ import { Container, Item, PackingService } from '3d-bin-packing-ts';
 export interface BultoInput {
   id?: string;
   label?: string;
+  tipo?: string;
   largo: number;
   ancho: number;
   alto: number;
   cantidad: number;
   color?: string;
+  pesoKg?: number;
 }
 
 export interface CubicajeInput {
@@ -22,6 +24,7 @@ export interface CubicajeInput {
 export interface BultoColocado {
   id: string;
   label: string;
+  tipo?: string;
   x: number;
   y: number;
   z: number;
@@ -29,20 +32,34 @@ export interface BultoColocado {
   ancho: number;
   alto: number;
   color: string;
+  pesoKg?: number;
+  fila: number;
+  colocado: boolean;
+}
+
+export interface BultoNoColocado {
+  id: string;
+  label: string;
+  tipo?: string;
+  color: string;
+  pesoKg?: number;
 }
 
 export interface CubicajeResult {
   modelo: string;
   contenedor: { largo: number; ancho: number; alto: number };
   bultos: BultoColocado[];
+  noColocados: BultoNoColocado[];
   totalSolicitados: number;
   totalColocados: number;
   noCabe: number;
   cabenTodos: boolean;
   utilizacionVolumen: number;
   pesoEstimadoKg?: number;
+  pesoColocadoKg: number;
   pesoMaxKg?: number;
   pesoOk: boolean;
+  filas: number;
   mensaje: string;
 }
 
@@ -53,6 +70,8 @@ type ModeloDims = {
   pvb?: number;
   capacidad_carga?: string;
 };
+
+type FlatBulto = BultoInput & { id: string; label: string; color: string };
 
 const MM = 1000;
 const MARGEN = 0.05;
@@ -97,52 +116,69 @@ export class CubicajeService {
     const flat = this.flattenBultos(input.bultos);
     const totalSolicitados = flat.length;
 
-    const uniformTarima =
+    const soloTarimasUniformes =
       input.bultos.length === 1 &&
-      input.bultos[0].cantidad > 0 &&
+      input.bultos[0].tipo === 'tarima' &&
       totalSolicitados > 0;
 
-    const bultos = uniformTarima
+    const colocados = soloTarimasUniformes
       ? this.packTarimasUpright(largo, ancho, alto, flat[0], totalSolicitados)
       : this.packWithAlgorithm(largo, ancho, alto, flat);
 
-    const totalColocados = bultos.length;
+    const placedIds = new Set(colocados.map((b) => b.id));
+    const noColocados: BultoNoColocado[] = flat
+      .filter((b) => !placedIds.has(b.id))
+      .map((b) => ({
+        id: b.id,
+        label: b.label,
+        tipo: b.tipo,
+        color: b.color,
+        pesoKg: b.pesoKg,
+      }));
+
+    const totalColocados = colocados.length;
     const noCabe = totalSolicitados - totalColocados;
     const cabenTodos = noCabe === 0;
 
     const volContenedor = largo * ancho * alto;
-    const volUsado = bultos.reduce((s, b) => s + b.largo * b.ancho * b.alto, 0);
+    const volUsado = colocados.reduce((s, b) => s + b.largo * b.ancho * b.alto, 0);
     const utilizacionVolumen = volContenedor > 0 ? Math.round((volUsado / volContenedor) * 1000) / 10 : 0;
 
-    const pesoEstimadoKg = input.pesoEstimadoKg;
+    const pesoColocadoKg = colocados.reduce((s, b) => s + (b.pesoKg ?? 0), 0);
+    const pesoEstimadoKg = input.pesoEstimadoKg ?? (pesoColocadoKg > 0 ? pesoColocadoKg : undefined);
     const pesoOk = pesoMaxKg == null || pesoEstimadoKg == null || pesoEstimadoKg <= pesoMaxKg;
 
+    const filas = colocados.length > 0 ? Math.max(...colocados.map((b) => b.fila)) : 0;
+
     let mensaje = cabenTodos
-      ? `Se colocaron ${totalColocados} bulto(s). Utilización de volumen: ${utilizacionVolumen}%.`
-      : `Solo caben ${totalColocados} de ${totalSolicitados} bulto(s). Considera un camión más grande o menos carga.`;
+      ? `Carga completa: ${totalColocados} bulto(s), ${utilizacionVolumen}% del volumen.`
+      : `${totalColocados} de ${totalSolicitados} bulto(s) colocados. ${noCabe} no cupieron.`;
 
     if (!pesoOk && pesoMaxKg != null && pesoEstimadoKg != null) {
-      mensaje += ` Peso estimado (${pesoEstimadoKg} kg) supera capacidad (~${Math.round(pesoMaxKg)} kg).`;
+      mensaje += ` Peso (${Math.round(pesoEstimadoKg)} kg) supera capacidad (~${Math.round(pesoMaxKg)} kg).`;
     }
 
     return {
       modelo: input.modelo,
       contenedor: { largo, ancho, alto },
-      bultos,
+      bultos: colocados,
+      noColocados,
       totalSolicitados,
       totalColocados,
       noCabe,
       cabenTodos,
       utilizacionVolumen,
       pesoEstimadoKg,
+      pesoColocadoKg,
       pesoMaxKg,
       pesoOk,
+      filas,
       mensaje,
     };
   }
 
-  private flattenBultos(bultos: BultoInput[]): Array<BultoInput & { id: string; label: string; color: string }> {
-    const out: Array<BultoInput & { id: string; label: string; color: string }> = [];
+  private flattenBultos(bultos: BultoInput[]): FlatBulto[] {
+    const out: FlatBulto[] = [];
     bultos.forEach((b, bi) => {
       const baseId = b.id || `bulto-${bi + 1}`;
       const label = b.label || `Bulto ${bi + 1}`;
@@ -160,12 +196,20 @@ export class CubicajeService {
     return out;
   }
 
-  /** Apila tarimas verticales (rotación solo en planta). */
+  private assignFilas(bultos: BultoColocado[], contLargo: number): BultoColocado[] {
+    if (bultos.length === 0) return bultos;
+    const slice = contLargo / 4;
+    return bultos.map((b) => ({
+      ...b,
+      fila: Math.min(4, Math.max(1, Math.floor(b.x / slice) + 1)),
+    }));
+  }
+
   private packTarimasUpright(
     contL: number,
     contW: number,
     contH: number,
-    tarima: BultoInput,
+    tarima: FlatBulto,
     count: number,
   ): BultoColocado[] {
     const tL = tarima.largo;
@@ -203,33 +247,41 @@ export class CubicajeService {
       const row = Math.floor(idx / layout.cols);
       const col = idx % layout.cols;
       result.push({
-        id: `${tarima.id || 'tarima'}-${i + 1}`,
-        label: count > 1 ? `Tarima #${i + 1}` : 'Tarima',
+        id: tarima.id,
+        label: count > 1 ? `Tarima #${i + 1}` : tarima.label,
+        tipo: tarima.tipo,
         x: MARGEN + row * layout.cellL,
         y: layer * tH,
         z: MARGEN + col * layout.cellW,
         largo: layout.cellL,
         ancho: layout.cellW,
         alto: tH,
-        color: tarima.color || TARIMA_COLOR,
+        color: tarima.color,
+        pesoKg: tarima.pesoKg,
+        fila: row + 1,
+        colocado: true,
       });
     }
-    return result;
+    return this.assignFilas(result, contL);
   }
 
   private packWithAlgorithm(
     contL: number,
     contW: number,
     contH: number,
-    items: Array<BultoInput & { id: string; label: string; color: string }>,
+    items: FlatBulto[],
   ): BultoColocado[] {
+    const sorted = [...items].sort(
+      (a, b) => b.largo * b.ancho * b.alto - a.largo * a.ancho * a.alto,
+    );
+
     const container = new Container(
       'camion',
       Math.round(contL * MM),
       Math.round(contW * MM),
       Math.round(contH * MM),
     );
-    const packItems = items.map(
+    const packItems = sorted.map(
       (b) =>
         new Item(
           b.id,
@@ -242,11 +294,12 @@ export class CubicajeService {
     const result = PackingService.packSingle(container, packItems);
     const packed = result.algorithmPackingResults[0]?.packedItems ?? [];
 
-    return packed.map((p) => {
+    const colocados = packed.map((p) => {
       const src = items.find((i) => i.id === p.id);
       return {
         id: p.id,
         label: src?.label || p.id,
+        tipo: src?.tipo,
         x: p.coordX / MM,
         y: p.coordY / MM,
         z: p.coordZ / MM,
@@ -254,8 +307,12 @@ export class CubicajeService {
         ancho: p.packDimZ / MM,
         alto: p.packDimY / MM,
         color: src?.color || TARIMA_COLOR,
+        pesoKg: src?.pesoKg,
+        fila: 1,
+        colocado: true,
       };
     });
+    return this.assignFilas(colocados, contL);
   }
 
   private resolvePesoMax(mod?: ModeloDims): number | undefined {

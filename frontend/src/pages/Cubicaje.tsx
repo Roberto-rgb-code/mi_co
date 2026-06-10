@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { ClienteDto } from './CRM';
 import { CubicajeScene } from '../components/CubicajeScene';
-import type { CameraPreset, CubicajeResult } from '../types/cubicaje';
-import { CAMERA_PRESETS } from '../types/cubicaje';
+import { CubicajeInventoryCard } from '../components/CubicajeInventoryCard';
+import type { CameraPreset, CubicajeResult, InventarioCounts } from '../types/cubicaje';
+import { CAMERA_PRESETS, TIPOS_BULTO, inventarioToBultos } from '../types/cubicaje';
 import './Cubicaje.css';
 
 interface ModeloOption {
@@ -12,7 +13,15 @@ interface ModeloOption {
   largo: number;
   ancho: number;
   alto: number;
+  linea?: string;
 }
+
+const DEFAULT_INVENTARIO: InventarioCounts = {
+  pequena: 0,
+  mediana: 0,
+  grande: 0,
+  tarima: 8,
+};
 
 export function Cubicaje() {
   const [searchParams] = useSearchParams();
@@ -22,15 +31,16 @@ export function Cubicaje() {
   const [modelos, setModelos] = useState<ModeloOption[]>([]);
   const [clienteId, setClienteId] = useState(clienteIdParam || '');
   const [modelo, setModelo] = useState('');
-  const [cantidad, setCantidad] = useState(8);
+  const [inventario, setInventario] = useState<InventarioCounts>(DEFAULT_INVENTARIO);
   const [tarimaLargo, setTarimaLargo] = useState(1.2);
   const [tarimaAncho, setTarimaAncho] = useState(1.0);
   const [tarimaAlto, setTarimaAlto] = useState(1.5);
-  const [pesoKg, setPesoKg] = useState<number | ''>('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CubicajeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [cameraPreset, setCameraPreset] = useState<CameraPreset>('iso');
+  const [cameraPreset, setCameraPreset] = useState<CameraPreset>('side');
+  const [filaFilter, setFilaFilter] = useState<number | null>(null);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -49,6 +59,7 @@ export function Cubicaje() {
         largo: (val.largo_aplicacion as number) ?? 6,
         ancho: (val.ancho_aplicacion as number) ?? 2.2,
         alto: (val.alto_aplicacion as number) ?? 2.2,
+        linea: val.linea as string | undefined,
       }));
       list.sort((a, b) => a.label.localeCompare(b.label, 'es', { numeric: true }));
       setModelos(list);
@@ -63,11 +74,13 @@ export function Cubicaje() {
       const c = clientes.find((x) => x.id === id);
       if (!c) return;
       if (c.modeloRecomendado) setModelo(c.modeloRecomendado);
-      if (c.cantidadTarimas != null && c.cantidadTarimas > 0) setCantidad(c.cantidadTarimas);
       if (c.tarimaLargo != null) setTarimaLargo(Number(c.tarimaLargo));
       if (c.tarimaAncho != null) setTarimaAncho(Number(c.tarimaAncho));
       if (c.tarimaAlto != null) setTarimaAlto(Number(c.tarimaAlto));
-      if (c.pesoEstimadoKg != null) setPesoKg(Number(c.pesoEstimadoKg));
+      setInventario((prev) => ({
+        ...prev,
+        tarima: c.cantidadTarimas != null && c.cantidadTarimas > 0 ? c.cantidadTarimas : prev.tarima,
+      }));
     },
     [clientes],
   );
@@ -81,37 +94,41 @@ export function Cubicaje() {
     [clientes, clienteId],
   );
 
-  const selectedModelo = useMemo(
-    () => modelos.find((m) => m.label === modelo || m.key === modelo),
-    [modelos, modelo],
-  );
+  const totalBultos = inventario.pequena + inventario.mediana + inventario.grande + inventario.tarima;
+
+  const statsByTipo = useMemo(() => {
+    if (!result) return {};
+    const map: Record<string, { placed: number; unplaced: number }> = {};
+    result.bultos.forEach((b) => {
+      const t = b.tipo || 'custom';
+      map[t] = map[t] || { placed: 0, unplaced: 0 };
+      map[t].placed++;
+    });
+    result.noColocados.forEach((b) => {
+      const t = b.tipo || 'custom';
+      map[t] = map[t] || { placed: 0, unplaced: 0 };
+      map[t].unplaced++;
+    });
+    return map;
+  }, [result]);
 
   const handleCalcular = async () => {
-    if (!modelo || cantidad < 1) return;
+    if (!modelo || totalBultos < 1) return;
     setLoading(true);
     setError(null);
     setResult(null);
+    setFilaFilter(null);
+    setHighlightedId(null);
     try {
+      const bultos = inventarioToBultos(
+        inventario,
+        { largo: tarimaLargo, ancho: tarimaAncho, alto: tarimaAlto },
+        selectedCliente?.productoTransportar,
+      );
       const res = await fetch('/api/cubicaje/calcular', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          modelo,
-          pesoEstimadoKg: pesoKg === '' ? undefined : Number(pesoKg),
-          bultos: [
-            {
-              id: 'tarima',
-              label: selectedCliente?.productoTransportar
-                ? `Tarima (${selectedCliente.productoTransportar})`
-                : 'Tarima',
-              largo: tarimaLargo,
-              ancho: tarimaAncho,
-              alto: tarimaAlto,
-              cantidad,
-              color: '#c8102e',
-            },
-          ],
-        }),
+        body: JSON.stringify({ modelo, bultos }),
       });
       const data = (await res.json()) as CubicajeResult & { message?: string };
       if (!res.ok) throw new Error(data.message || 'Error al calcular cubicaje');
@@ -123,209 +140,248 @@ export function Cubicaje() {
     }
   };
 
+  const setInv = (key: keyof InventarioCounts, n: number) => {
+    setInventario((prev) => ({ ...prev, [key]: n }));
+  };
+
+  const filaButtons = useMemo(() => {
+    if (!result || result.filas < 1) return [];
+    return Array.from({ length: Math.min(result.filas, 4) }, (_, i) => i + 1);
+  }, [result]);
+
   return (
-    <div className="page cubicaje">
-      <header className="cubicaje-header">
-        <div>
-          <h1>Cubicaje 3D</h1>
-          <p className="cubicaje-lead">
-            Visualiza la colocación de tarimas dentro de la caja del camión ISUZU. Selecciona un
-            cliente del CRM para precargar datos o ajusta manualmente.
-          </p>
+    <div className="page cubicaje cubicaje-dashboard">
+      <header className="cubicaje-topbar">
+        <div className="cubicaje-brand">
+          <span className="cubicaje-brand-logo">ISUZU</span>
+          <span className="cubicaje-brand-sub">Cubicaje de carga</span>
+        </div>
+        <div className="cubicaje-topbar-center">
+          <label className="cubicaje-cliente-select">
+            <span>Cliente CRM</span>
+            <select value={clienteId} onChange={(e) => applyCliente(e.target.value)}>
+              <option value="">— Sin cliente —</option>
+              {clientes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre}
+                  {c.productoTransportar ? ` · ${c.productoTransportar}` : ''}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
         {selectedCliente && (
           <Link to={`/crm/${selectedCliente.id}`} className="cubicaje-cliente-link">
-            Ver ficha: {selectedCliente.nombre}
+            Ficha cliente
           </Link>
         )}
       </header>
 
-      <div className="cubicaje-layout">
-        <aside className="cubicaje-panel cubicaje-panel--controls">
-          <h2>Configuración</h2>
+      <div className="cubicaje-dashboard-grid">
+        {/* Columna izquierda: selector de camión */}
+        <aside className="cubicaje-trucks">
+          <h2>Camiones ISUZU</h2>
+          <ul className="cubicaje-truck-list">
+            {modelos.map((m) => (
+              <li key={m.key}>
+                <button
+                  type="button"
+                  className={`cubicaje-truck-item ${modelo === m.label ? 'active' : ''}`}
+                  onClick={() => setModelo(m.label)}
+                >
+                  <span className="cubicaje-truck-icon">🚛</span>
+                  <span className="cubicaje-truck-info">
+                    <strong>{m.label}</strong>
+                    <small>
+                      {m.largo.toFixed(1)}×{m.ancho.toFixed(1)}×{m.alto.toFixed(1)} m
+                      {m.linea ? ` · ${m.linea}` : ''}
+                    </small>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </aside>
 
-          <label className="cubicaje-field">
-            Cliente (CRM)
-            <select
-              value={clienteId}
-              onChange={(e) => applyCliente(e.target.value)}
-            >
-              <option value="">— Manual —</option>
-              {clientes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                  {c.empresa ? ` · ${c.empresa}` : ''}
-                </option>
+        {/* Centro: visualización 3D */}
+        <main className="cubicaje-stage">
+          <div className="cubicaje-stage-toolbar">
+            <div className="cubicaje-view-tabs">
+              {(Object.keys(CAMERA_PRESETS) as CameraPreset[]).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={`cubicaje-view-tab ${cameraPreset === key ? 'active' : ''}`}
+                  onClick={() => setCameraPreset(key)}
+                >
+                  {CAMERA_PRESETS[key].label}
+                </button>
               ))}
-            </select>
-          </label>
-
-          <label className="cubicaje-field">
-            Modelo ISUZU
-            <select value={modelo} onChange={(e) => setModelo(e.target.value)}>
-              {modelos.map((m) => (
-                <option key={m.key} value={m.label}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          {selectedModelo && (
-            <p className="cubicaje-dims-hint">
-              Caja: {selectedModelo.largo.toFixed(2)} × {selectedModelo.ancho.toFixed(2)} ×{' '}
-              {selectedModelo.alto.toFixed(2)} m
-            </p>
-          )}
-
-          <label className="cubicaje-field">
-            Cantidad de tarimas
-            <input
-              type="number"
-              min={1}
-              max={200}
-              value={cantidad}
-              onChange={(e) => setCantidad(parseInt(e.target.value, 10) || 1)}
-            />
-          </label>
-
-          <div className="cubicaje-row">
-            <label className="cubicaje-field">
-              Largo (m)
-              <input
-                type="number"
-                step={0.01}
-                min={0.1}
-                value={tarimaLargo}
-                onChange={(e) => setTarimaLargo(parseFloat(e.target.value) || 1.2)}
-              />
-            </label>
-            <label className="cubicaje-field">
-              Ancho (m)
-              <input
-                type="number"
-                step={0.01}
-                min={0.1}
-                value={tarimaAncho}
-                onChange={(e) => setTarimaAncho(parseFloat(e.target.value) || 1)}
-              />
-            </label>
-            <label className="cubicaje-field">
-              Alto (m)
-              <input
-                type="number"
-                step={0.01}
-                min={0.1}
-                value={tarimaAlto}
-                onChange={(e) => setTarimaAlto(parseFloat(e.target.value) || 1.5)}
-              />
-            </label>
+            </div>
+            {filaButtons.length > 0 && (
+              <div className="cubicaje-row-tabs">
+                <button
+                  type="button"
+                  className={`cubicaje-row-tab ${filaFilter === null ? 'active' : ''}`}
+                  onClick={() => setFilaFilter(null)}
+                >
+                  Todas
+                </button>
+                {filaButtons.map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    className={`cubicaje-row-tab ${filaFilter === f ? 'active' : ''}`}
+                    onClick={() => setFilaFilter(f === filaFilter ? null : f)}
+                  >
+                    Fila {f}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          <label className="cubicaje-field">
-            Peso estimado total (kg)
-            <input
-              type="number"
-              min={0}
-              value={pesoKg}
-              placeholder="Opcional"
-              onChange={(e) => setPesoKg(e.target.value === '' ? '' : parseFloat(e.target.value))}
-            />
-          </label>
+          <div className="cubicaje-canvas-wrap">
+            {result ? (
+              <CubicajeScene
+                result={result}
+                preset={cameraPreset}
+                filaFilter={filaFilter}
+                highlightedId={highlightedId}
+              />
+            ) : (
+              <div className="cubicaje-canvas-placeholder">
+                <span>🚛</span>
+                <p>Selecciona camión y carga, luego optimiza el cubicaje.</p>
+              </div>
+            )}
+          </div>
 
-          <button
-            type="button"
-            className="btn-primary cubicaje-calc-btn"
-            onClick={() => void handleCalcular()}
-            disabled={loading || !modelo}
-          >
-            {loading ? 'Calculando…' : 'Calcular cubicaje'}
-          </button>
+          {result && (
+            <footer className="cubicaje-metrics-bar">
+              <div className="cubicaje-metric">
+                <span className="cubicaje-metric-label">Peso</span>
+                <strong className={result.pesoOk ? '' : 'warn'}>
+                  {Math.round(result.pesoColocadoKg)} kg
+                  {result.pesoMaxKg != null && ` / ~${Math.round(result.pesoMaxKg)} kg`}
+                </strong>
+              </div>
+              <div className="cubicaje-metric">
+                <span className="cubicaje-metric-label">Volumen</span>
+                <strong>{result.utilizacionVolumen}%</strong>
+              </div>
+              <div className="cubicaje-metric">
+                <span className="cubicaje-metric-label">Colocados</span>
+                <strong>
+                  {result.totalColocados}/{result.totalSolicitados}
+                </strong>
+              </div>
+              <div className="cubicaje-metric cubicaje-metric--msg">
+                <span className={result.cabenTodos ? 'ok' : 'warn'}>{result.mensaje}</span>
+              </div>
+            </footer>
+          )}
+        </main>
+
+        {/* Columna derecha: inventario de carga */}
+        <aside className="cubicaje-inventory">
+          <div className="cubicaje-inventory-head">
+            <h2>Carga a colocar</h2>
+            <button
+              type="button"
+              className="btn-primary cubicaje-optimize-btn"
+              onClick={() => void handleCalcular()}
+              disabled={loading || !modelo || totalBultos < 1}
+            >
+              {loading ? 'Optimizando…' : 'Optimizar carga'}
+            </button>
+          </div>
+
+          {(['pequena', 'mediana', 'grande', 'tarima'] as const).map((tipo) => (
+            <CubicajeInventoryCard
+              key={tipo}
+              preset={TIPOS_BULTO[tipo]}
+              count={inventario[tipo]}
+              onChange={(n) => setInv(tipo, n)}
+              placed={statsByTipo[tipo]?.placed}
+              unplaced={statsByTipo[tipo]?.unplaced}
+            />
+          ))}
+
+          {inventario.tarima > 0 && (
+            <div className="cubicaje-tarima-dims">
+              <p className="cubicaje-dims-title">Dimensiones tarima (m)</p>
+              <div className="cubicaje-row">
+                <label>
+                  L
+                  <input
+                    type="number"
+                    step={0.01}
+                    value={tarimaLargo}
+                    onChange={(e) => setTarimaLargo(parseFloat(e.target.value) || 1.2)}
+                  />
+                </label>
+                <label>
+                  A
+                  <input
+                    type="number"
+                    step={0.01}
+                    value={tarimaAncho}
+                    onChange={(e) => setTarimaAncho(parseFloat(e.target.value) || 1)}
+                  />
+                </label>
+                <label>
+                  H
+                  <input
+                    type="number"
+                    step={0.01}
+                    value={tarimaAlto}
+                    onChange={(e) => setTarimaAlto(parseFloat(e.target.value) || 1.5)}
+                  />
+                </label>
+              </div>
+            </div>
+          )}
 
           {error && (
             <p className="cubicaje-error" role="alert">
               {error}
             </p>
           )}
-        </aside>
 
-        <main className="cubicaje-main">
-          <div className="cubicaje-view-toolbar">
-            {(Object.keys(CAMERA_PRESETS) as CameraPreset[]).map((key) => (
-              <button
-                key={key}
-                type="button"
-                className={`cubicaje-view-btn ${cameraPreset === key ? 'active' : ''}`}
-                onClick={() => setCameraPreset(key)}
-              >
-                {CAMERA_PRESETS[key].label}
-              </button>
-            ))}
-          </div>
-
-          <div className="cubicaje-canvas-wrap">
-            {result ? (
-              <CubicajeScene result={result} preset={cameraPreset} />
-            ) : (
-              <div className="cubicaje-canvas-placeholder">
-                <span>📦</span>
-                <p>Configura los datos y pulsa «Calcular cubicaje» para ver la carga en 3D.</p>
-              </div>
-            )}
-          </div>
-        </main>
-
-        <aside className="cubicaje-panel cubicaje-panel--stats">
-          <h2>Resultado</h2>
-          {!result && <p className="cubicaje-muted">Sin cálculo aún.</p>}
-          {result && (
-            <>
-              <p className={`cubicaje-msg ${result.cabenTodos ? 'ok' : 'warn'}`}>
-                {result.mensaje}
-              </p>
-              <dl className="cubicaje-stats">
-                <div>
-                  <dt>Modelo</dt>
-                  <dd>{result.modelo}</dd>
-                </div>
-                <div>
-                  <dt>Colocados</dt>
-                  <dd>
-                    {result.totalColocados} / {result.totalSolicitados}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Volumen usado</dt>
-                  <dd>{result.utilizacionVolumen}%</dd>
-                </div>
-                {result.pesoMaxKg != null && (
-                  <div>
-                    <dt>Peso / capacidad</dt>
-                    <dd className={result.pesoOk ? '' : 'warn-text'}>
-                      {result.pesoEstimadoKg != null
-                        ? `${result.pesoEstimadoKg} / ~${Math.round(result.pesoMaxKg)} kg`
-                        : `~${Math.round(result.pesoMaxKg)} kg máx.`}
-                    </dd>
-                  </div>
-                )}
-              </dl>
-
-              <h3>Bultos colocados</h3>
-              <ul className="cubicaje-bultos-list">
-                {result.bultos.map((b) => (
+          {result && result.noColocados.length > 0 && (
+            <div className="cubicaje-unplaced">
+              <h3>Sin cupo ({result.noColocados.length})</h3>
+              <ul>
+                {result.noColocados.map((b) => (
                   <li key={b.id}>
                     <span className="cubicaje-swatch" style={{ background: b.color }} />
-                    <span>{b.label}</span>
-                    <span className="cubicaje-bulto-pos">
-                      {b.largo.toFixed(2)}×{b.ancho.toFixed(2)}×{b.alto.toFixed(2)} m
-                    </span>
+                    {b.label}
                   </li>
                 ))}
               </ul>
-              {result.noCabe > 0 && (
-                <p className="cubicaje-warn-inline">{result.noCabe} bulto(s) no cupieron.</p>
-              )}
-            </>
+            </div>
+          )}
+
+          {result && result.bultos.length > 0 && (
+            <div className="cubicaje-placed-list">
+              <h3>Colocados ({result.bultos.length})</h3>
+              <ul>
+                {result.bultos.map((b) => (
+                  <li key={b.id}>
+                    <button
+                      type="button"
+                      className={highlightedId === b.id ? 'active' : ''}
+                      onClick={() => setHighlightedId(highlightedId === b.id ? null : b.id)}
+                    >
+                      <span className="cubicaje-swatch" style={{ background: b.color }} />
+                      <span>{b.label}</span>
+                      <span className="cubicaje-bulto-pos">F{b.fila}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </aside>
       </div>
