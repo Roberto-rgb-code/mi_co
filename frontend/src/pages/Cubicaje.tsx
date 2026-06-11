@@ -3,8 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import type { ClienteDto } from './CRM';
 import { CubicajeScene, CubicajeSceneFromResult } from '../components/CubicajeScene';
 import { CubicajeInventoryCard } from '../components/CubicajeInventoryCard';
-import type { CameraPreset, CubicajeResult, InventarioCounts } from '../types/cubicaje';
-import { CAMERA_PRESETS, TIPOS_BULTO, inventarioToBultos } from '../types/cubicaje';
+import type { CameraPreset, CubicajeResult, InventarioCounts, InventarioDims } from '../types/cubicaje';
+import { CAMERA_PRESETS, DEFAULT_INVENTARIO_DIMS, TIPOS_BULTO, inventarioToBultos } from '../types/cubicaje';
 import { calcMetrosVacios, calcVolumenUsado } from '../utils/cubicajeAxleWeight';
 import './Cubicaje.css';
 
@@ -33,9 +33,7 @@ export function Cubicaje() {
   const [clienteId, setClienteId] = useState(clienteIdParam || '');
   const [modelo, setModelo] = useState('');
   const [inventario, setInventario] = useState<InventarioCounts>(DEFAULT_INVENTARIO);
-  const [tarimaLargo, setTarimaLargo] = useState(1.2);
-  const [tarimaAncho, setTarimaAncho] = useState(1.0);
-  const [tarimaAlto, setTarimaAlto] = useState(1.5);
+  const [bultoDims, setBultoDims] = useState<InventarioDims>(() => ({ ...DEFAULT_INVENTARIO_DIMS }));
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CubicajeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -91,9 +89,16 @@ export function Cubicaje() {
       const c = clientes.find((x) => x.id === id);
       if (!c) return;
       if (c.modeloRecomendado) setModelo(c.modeloRecomendado);
-      if (c.tarimaLargo != null) setTarimaLargo(Number(c.tarimaLargo));
-      if (c.tarimaAncho != null) setTarimaAncho(Number(c.tarimaAncho));
-      if (c.tarimaAlto != null) setTarimaAlto(Number(c.tarimaAlto));
+      if (c.tarimaLargo != null || c.tarimaAncho != null || c.tarimaAlto != null) {
+        setBultoDims((prev) => ({
+          ...prev,
+          tarima: {
+            largo: c.tarimaLargo != null ? Number(c.tarimaLargo) : prev.tarima.largo,
+            ancho: c.tarimaAncho != null ? Number(c.tarimaAncho) : prev.tarima.ancho,
+            alto: c.tarimaAlto != null ? Number(c.tarimaAlto) : prev.tarima.alto,
+          },
+        }));
+      }
       setInventario((prev) => ({
         ...prev,
         tarima: c.cantidadTarimas != null && c.cantidadTarimas > 0 ? c.cantidadTarimas : prev.tarima,
@@ -153,11 +158,7 @@ export function Cubicaje() {
       setFilaFilter(null);
     }
     try {
-      const bultos = inventarioToBultos(
-        inventario,
-        { largo: tarimaLargo, ancho: tarimaAncho, alto: tarimaAlto },
-        selectedCliente?.productoTransportar,
-      );
+      const bultos = inventarioToBultos(inventario, bultoDims, selectedCliente?.productoTransportar);
       const res = await fetch('/api/cubicaje/calcular', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -176,6 +177,11 @@ export function Cubicaje() {
 
   const setInv = (key: keyof InventarioCounts, n: number) => {
     setInventario((prev) => ({ ...prev, [key]: n }));
+  };
+
+  const setDims = (key: keyof InventarioDims, dims: InventarioDims[typeof key]) => {
+    setBultoDims((prev) => ({ ...prev, [key]: dims }));
+    setResult(null);
   };
 
   const filaButtons = useMemo(() => {
@@ -469,50 +475,19 @@ export function Cubicaje() {
                 key={tipo}
                 preset={TIPOS_BULTO[tipo]}
                 count={inventario[tipo]}
+                dims={bultoDims[tipo]}
                 onChange={(n) => setInv(tipo, n)}
+                onDimsChange={(dims) => setDims(tipo, dims)}
                 placed={statsByTipo[tipo]?.placed}
                 unplaced={statsByTipo[tipo]?.unplaced}
               />
             ))}
           </div>
 
-          {inventario.tarima > 0 && (
-            <div className="cubicaje-tarima-inline">
-              <span className="cubicaje-tarima-label">Tarima (m)</span>
-              <label>
-                L
-                <input
-                  type="number"
-                  step={0.01}
-                  value={tarimaLargo}
-                  onChange={(e) => setTarimaLargo(parseFloat(e.target.value) || 1.2)}
-                />
-              </label>
-              <label>
-                A
-                <input
-                  type="number"
-                  step={0.01}
-                  value={tarimaAncho}
-                  onChange={(e) => setTarimaAncho(parseFloat(e.target.value) || 1)}
-                />
-              </label>
-              <label>
-                H
-                <input
-                  type="number"
-                  step={0.01}
-                  value={tarimaAlto}
-                  onChange={(e) => setTarimaAlto(parseFloat(e.target.value) || 1.5)}
-                />
-              </label>
-            </div>
-          )}
-
           {!result && previewContenedor && (
             <p className="cubicaje-sidebar-hint">
-              Configura cantidades y pulsa <strong>Cargar</strong> para simular la colocación dentro
-              de la caja {previewContenedor.largo.toFixed(1)}×{previewContenedor.ancho.toFixed(1)}×
+              Ajusta medidas y cantidades, luego pulsa <strong>Cargar</strong> para simular la colocación
+              dentro de la caja {previewContenedor.largo.toFixed(1)}×{previewContenedor.ancho.toFixed(1)}×
               {previewContenedor.alto.toFixed(1)} m.
             </p>
           )}

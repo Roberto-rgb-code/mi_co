@@ -286,6 +286,63 @@
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
+.cubicaje-inv-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.cubicaje-inv-dims {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  margin: 0.1rem 0 0.15rem;
+}
+
+.cubicaje-inv-dims-label {
+  font-size: 0.58rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  width: 100%;
+}
+
+.cubicaje-inv-dims label {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.cubicaje-inv-dims input {
+  width: 46px;
+  padding: 0.2rem 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.cubicaje-inv-dims--sm {
+  margin-top: 0.15rem;
+}
+
+.cubicaje-inv-dims--sm .cubicaje-inv-dims-label {
+  width: auto;
+  margin-right: 0.15rem;
+}
+
+.cubicaje-inv-dims--sm input {
+  width: 40px;
+  font-size: 0.68rem;
+}
+
 .cubicaje-inv-preview {
   width: 44px;
   height: 44px;

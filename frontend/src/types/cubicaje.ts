@@ -130,41 +130,42 @@ export interface InventarioCounts {
   tarima: number;
 }
 
+export interface BultoDims {
+  largo: number;
+  ancho: number;
+  alto: number;
+}
+
+export type InventarioDims = Record<Exclude<TipoBultoId, 'custom'>, BultoDims>;
+
+export const DEFAULT_INVENTARIO_DIMS: InventarioDims = {
+  pequena: { largo: TIPOS_BULTO.pequena.largo, ancho: TIPOS_BULTO.pequena.ancho, alto: TIPOS_BULTO.pequena.alto },
+  mediana: { largo: TIPOS_BULTO.mediana.largo, ancho: TIPOS_BULTO.mediana.ancho, alto: TIPOS_BULTO.mediana.alto },
+  grande: { largo: TIPOS_BULTO.grande.largo, ancho: TIPOS_BULTO.grande.ancho, alto: TIPOS_BULTO.grande.alto },
+  tarima: { largo: TIPOS_BULTO.tarima.largo, ancho: TIPOS_BULTO.tarima.ancho, alto: TIPOS_BULTO.tarima.alto },
+};
+
 export function inventarioToBultos(
   counts: InventarioCounts,
-  tarimaDims?: { largo: number; ancho: number; alto: number },
+  dims: InventarioDims = DEFAULT_INVENTARIO_DIMS,
   productoLabel?: string,
 ): BultoInput[] {
   const out: BultoInput[] = [];
-  (['pequena', 'mediana', 'grande'] as const).forEach((tipo) => {
-    if (counts[tipo] > 0) {
-      const p = TIPOS_BULTO[tipo];
-      out.push({
-        id: tipo,
-        label: p.label,
-        tipo,
-        largo: p.largo,
-        ancho: p.ancho,
-        alto: p.alto,
-        cantidad: counts[tipo],
-        color: p.color,
-        pesoKg: p.pesoKg,
-      });
-    }
-  });
-  if (counts.tarima > 0) {
-    const t = TIPOS_BULTO.tarima;
+  (['pequena', 'mediana', 'grande', 'tarima'] as const).forEach((tipo) => {
+    if (counts[tipo] <= 0) return;
+    const p = TIPOS_BULTO[tipo];
+    const d = dims[tipo];
     out.push({
-      id: 'tarima',
-      label: productoLabel ? `Tarima (${productoLabel})` : t.label,
-      tipo: 'tarima',
-      largo: tarimaDims?.largo ?? t.largo,
-      ancho: tarimaDims?.ancho ?? t.ancho,
-      alto: tarimaDims?.alto ?? t.alto,
-      cantidad: counts.tarima,
-      color: t.color,
-      pesoKg: t.pesoKg,
+      id: tipo,
+      label: tipo === 'tarima' && productoLabel ? `Tarima (${productoLabel})` : p.label,
+      tipo,
+      largo: d.largo,
+      ancho: d.ancho,
+      alto: d.alto,
+      cantidad: counts[tipo],
+      color: p.color,
+      pesoKg: p.pesoKg,
     });
-  }
+  });
   return out;
 }
