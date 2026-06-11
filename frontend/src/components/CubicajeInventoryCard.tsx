@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
-import type { BultoDims, TipoBultoPreset } from '../types/cubicaje';
+import type { BultoDims, BultoForma, TipoBultoPreset } from '../types/cubicaje';
+import { bultoVolume } from '../types/cubicaje';
 
 interface Props {
   preset: TipoBultoPreset;
@@ -25,14 +26,51 @@ function DimsEditor({
   dims,
   onDimsChange,
   compact,
+  forma,
 }: {
   dims: BultoDims;
   onDimsChange: (dims: BultoDims) => void;
   compact?: boolean;
+  forma: BultoForma;
 }) {
   const set = (key: keyof BultoDims, raw: string) => {
     onDimsChange({ ...dims, [key]: parseDim(raw, dims[key]) });
   };
+
+  const setDiameter = (raw: string) => {
+    const d = parseDim(raw, dims.largo);
+    onDimsChange({ ...dims, largo: d, ancho: d });
+  };
+
+  if (forma === 'cilindro') {
+    return (
+      <div className={`cubicaje-inv-dims ${compact ? 'cubicaje-inv-dims--sm' : ''}`}>
+        <span className="cubicaje-inv-dims-label">Medidas (m)</span>
+        <label>
+          Ø
+          <input
+            type="number"
+            min={0.05}
+            step={0.01}
+            value={formatDim(dims.largo)}
+            onChange={(e) => setDiameter(e.target.value)}
+            title="Diámetro"
+          />
+        </label>
+        <label>
+          H
+          <input
+            type="number"
+            min={0.05}
+            step={0.01}
+            value={formatDim(dims.alto)}
+            onChange={(e) => set('alto', e.target.value)}
+            title="Altura"
+          />
+        </label>
+      </div>
+    );
+  }
 
   return (
     <div className={`cubicaje-inv-dims ${compact ? 'cubicaje-inv-dims--sm' : ''}`}>
@@ -81,8 +119,11 @@ export function CubicajeInventoryCard({
   unplaced,
   compact = false,
 }: Props) {
-  const vol = (dims.largo * dims.ancho * dims.alto).toFixed(3);
-  const dimLabel = `${dims.largo}×${dims.ancho}×${dims.alto} m`;
+  const vol = bultoVolume(dims, preset.forma).toFixed(3);
+  const dimLabel =
+    preset.forma === 'cilindro'
+      ? `Ø${dims.largo} × ${dims.alto} m`
+      : `${dims.largo}×${dims.ancho}×${dims.alto} m`;
 
   if (compact) {
     return (
@@ -91,7 +132,7 @@ export function CubicajeInventoryCard({
         <div className="cubicaje-inv-row-info">
           <span className="cubicaje-inv-row-name">{preset.label}</span>
           <span className="cubicaje-inv-row-dim">{dimLabel}</span>
-          <DimsEditor dims={dims} onDimsChange={onDimsChange} compact />
+          <DimsEditor dims={dims} onDimsChange={onDimsChange} compact forma={preset.forma} />
         </div>
         {placed != null && (
           <span className={`cubicaje-inv-row-status ${unplaced ? 'warn' : 'ok'}`}>
@@ -119,8 +160,11 @@ export function CubicajeInventoryCard({
 
   return (
     <div className="cubicaje-inv-card">
-      <div className="cubicaje-inv-preview" style={{ '--box-color': preset.color } as CSSProperties}>
-        <div className="cubicaje-inv-box3d" />
+      <div
+        className={`cubicaje-inv-preview ${preset.forma === 'cilindro' ? 'cubicaje-inv-preview--cylinder' : ''}`}
+        style={{ '--box-color': preset.color } as CSSProperties}
+      >
+        <div className={preset.forma === 'cilindro' ? 'cubicaje-inv-cylinder3d' : 'cubicaje-inv-box3d'} />
       </div>
       <div className="cubicaje-inv-body">
         <div className="cubicaje-inv-head">
@@ -140,7 +184,7 @@ export function CubicajeInventoryCard({
             )}
           </p>
         )}
-        <DimsEditor dims={dims} onDimsChange={onDimsChange} />
+        <DimsEditor dims={dims} onDimsChange={onDimsChange} forma={preset.forma} />
         <div className="cubicaje-inv-qty">
           <button type="button" onClick={() => onChange(Math.max(0, count - 1))} aria-label="Menos">
             −

@@ -364,6 +364,32 @@
   transform: perspective(40px) rotateX(-10deg) rotateY(15deg);
 }
 
+.cubicaje-inv-cylinder3d {
+  width: 18px;
+  height: 26px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.15), var(--box-color, #0891b2) 35%, var(--box-color, #0891b2) 65%, rgba(0, 0, 0, 0.12));
+  border-radius: 50% / 12%;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.cubicaje-inv-cylinder3d::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 3px;
+  background: #334155;
+  border-radius: 50%;
+  opacity: 0.85;
+}
+
+.cubicaje-inv-preview--cylinder {
+  height: 48px;
+}
+
 .cubicaje-inv-head strong {
   font-size: 0.75rem;
 }

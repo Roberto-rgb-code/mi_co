@@ -147,6 +147,7 @@ const TIPO_COLOR: Record<string, string> = {
   mediana: '#eab308',
   grande: '#3b82f6',
   tarima: '#fb923c',
+  tambo: '#0891b2',
 };
 
 function shortLabel(text: string, max = 14): string {
@@ -180,13 +181,40 @@ export function CargoBulto({
   const cz = z + bw / 2;
   const fill = highlighted ? '#f97316' : (TIPO_COLOR[tipo || ''] || bulto.color);
   const opacity = dimmed ? 0.18 : 0.94;
-  const showTag = showLabel && !dimmed && Math.min(bl, bh, bw) > 0.35;
+  const isCylinder = tipo === 'tambo';
+  const minSize = isCylinder ? Math.min(bl, bw) : Math.min(bl, bh, bw);
+  const showTag = showLabel && !dimmed && minSize > 0.35;
 
   return (
     <group position={[cx, cy, cz]}>
-      <RoundedBox args={[bl * 0.96, bh * 0.96, bw * 0.96]} radius={0.01} smoothness={2} castShadow receiveShadow>
-        <meshStandardMaterial color={fill} roughness={0.4} transparent opacity={opacity} />
-      </RoundedBox>
+      {isCylinder ? (
+        <>
+          <mesh castShadow receiveShadow>
+            <cylinderGeometry args={[Math.min(bl, bw) * 0.48, Math.min(bl, bw) * 0.48, bh * 0.96, 28]} />
+            <meshStandardMaterial
+              color={fill}
+              roughness={0.32}
+              metalness={0.18}
+              transparent
+              opacity={opacity}
+            />
+          </mesh>
+          <mesh position={[0, bh * 0.48 - 0.015, 0]}>
+            <cylinderGeometry args={[Math.min(bl, bw) * 0.42, Math.min(bl, bw) * 0.42, 0.03, 24]} />
+            <meshStandardMaterial
+              color="#334155"
+              roughness={0.45}
+              metalness={0.35}
+              transparent
+              opacity={opacity}
+            />
+          </mesh>
+        </>
+      ) : (
+        <RoundedBox args={[bl * 0.96, bh * 0.96, bw * 0.96]} radius={0.01} smoothness={2} castShadow receiveShadow>
+          <meshStandardMaterial color={fill} roughness={0.4} transparent opacity={opacity} />
+        </RoundedBox>
+      )}
       {showTag && (
         <Html center position={[0, bh * 0.52, 0]} style={{ pointerEvents: 'none' }} zIndexRange={[100, 0]}>
           <span className="cubicaje-bulto-tag">{shortLabel(bulto.label)}</span>

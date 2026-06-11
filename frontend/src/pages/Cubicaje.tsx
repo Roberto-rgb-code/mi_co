@@ -4,7 +4,7 @@ import type { ClienteDto } from './CRM';
 import { CubicajeScene, CubicajeSceneFromResult } from '../components/CubicajeScene';
 import { CubicajeInventoryCard } from '../components/CubicajeInventoryCard';
 import type { CameraPreset, CubicajeResult, InventarioCounts, InventarioDims } from '../types/cubicaje';
-import { CAMERA_PRESETS, DEFAULT_INVENTARIO_DIMS, TIPOS_BULTO, inventarioToBultos } from '../types/cubicaje';
+import { CAMERA_PRESETS, DEFAULT_INVENTARIO_DIMS, INVENTARIO_TIPOS, TIPOS_BULTO, inventarioToBultos } from '../types/cubicaje';
 import { calcMetrosVacios, calcVolumenUsado } from '../utils/cubicajeAxleWeight';
 import './Cubicaje.css';
 
@@ -22,6 +22,7 @@ const DEFAULT_INVENTARIO: InventarioCounts = {
   mediana: 0,
   grande: 0,
   tarima: 8,
+  tambo: 0,
 };
 
 export function Cubicaje() {
@@ -129,7 +130,8 @@ export function Cubicaje() {
     [selectedModelo],
   );
 
-  const totalBultos = inventario.pequena + inventario.mediana + inventario.grande + inventario.tarima;
+  const totalBultos =
+    inventario.pequena + inventario.mediana + inventario.grande + inventario.tarima + inventario.tambo;
 
   const statsByTipo = useMemo(() => {
     if (!result) return {};
@@ -392,7 +394,7 @@ export function Cubicaje() {
                       {previewContenedor.alto.toFixed(2)} m
                     </p>
                     <ul className="cubicaje-legend-colors">
-                      {(['pequena', 'mediana', 'grande', 'tarima'] as const).map((t) =>
+                      {INVENTARIO_TIPOS.map((t) =>
                         inventario[t] > 0 ? (
                           <li key={t}>
                             <span className="cubicaje-legend-dot" style={{ background: TIPOS_BULTO[t].color }} />
@@ -470,7 +472,7 @@ export function Cubicaje() {
         <aside className="cubicaje-sidebar">
           <h2 className="cubicaje-sidebar-title">Carga a colocar</h2>
           <div className="cubicaje-inv-list">
-            {(['pequena', 'mediana', 'grande', 'tarima'] as const).map((tipo) => (
+            {INVENTARIO_TIPOS.map((tipo) => (
               <CubicajeInventoryCard
                 key={tipo}
                 preset={TIPOS_BULTO[tipo]}

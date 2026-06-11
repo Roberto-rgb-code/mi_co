@@ -1,4 +1,6 @@
-export type TipoBultoId = 'pequena' | 'mediana' | 'grande' | 'tarima' | 'custom';
+export type TipoBultoId = 'pequena' | 'mediana' | 'grande' | 'tarima' | 'tambo' | 'custom';
+
+export type BultoForma = 'caja' | 'cilindro';
 
 export interface TipoBultoPreset {
   id: TipoBultoId;
@@ -8,6 +10,7 @@ export interface TipoBultoPreset {
   alto: number;
   color: string;
   pesoKg: number;
+  forma: BultoForma;
 }
 
 /** Presets inspirados en CLOA (Google-Gemini3Pro-CargoLoadOptimiser) + tarima estándar MX. */
@@ -20,6 +23,7 @@ export const TIPOS_BULTO: Record<Exclude<TipoBultoId, 'custom'>, TipoBultoPreset
     alto: 0.15,
     color: '#22c55e',
     pesoKg: 15,
+    forma: 'caja',
   },
   mediana: {
     id: 'mediana',
@@ -29,6 +33,7 @@ export const TIPOS_BULTO: Record<Exclude<TipoBultoId, 'custom'>, TipoBultoPreset
     alto: 0.3,
     color: '#3b82f6',
     pesoKg: 35,
+    forma: 'caja',
   },
   grande: {
     id: 'grande',
@@ -38,6 +43,7 @@ export const TIPOS_BULTO: Record<Exclude<TipoBultoId, 'custom'>, TipoBultoPreset
     alto: 0.6,
     color: '#f97316',
     pesoKg: 80,
+    forma: 'caja',
   },
   tarima: {
     id: 'tarima',
@@ -47,6 +53,17 @@ export const TIPOS_BULTO: Record<Exclude<TipoBultoId, 'custom'>, TipoBultoPreset
     alto: 1.5,
     color: '#c8102e',
     pesoKg: 700,
+    forma: 'caja',
+  },
+  tambo: {
+    id: 'tambo',
+    label: 'Tambo',
+    largo: 0.58,
+    ancho: 0.58,
+    alto: 0.87,
+    color: '#0891b2',
+    pesoKg: 200,
+    forma: 'cilindro',
   },
 };
 
@@ -128,7 +145,11 @@ export interface InventarioCounts {
   mediana: number;
   grande: number;
   tarima: number;
+  tambo: number;
 }
+
+export const INVENTARIO_TIPOS = ['pequena', 'mediana', 'grande', 'tarima', 'tambo'] as const;
+export type InventarioTipoId = (typeof INVENTARIO_TIPOS)[number];
 
 export interface BultoDims {
   largo: number;
@@ -136,14 +157,23 @@ export interface BultoDims {
   alto: number;
 }
 
-export type InventarioDims = Record<Exclude<TipoBultoId, 'custom'>, BultoDims>;
+export type InventarioDims = Record<InventarioTipoId, BultoDims>;
 
 export const DEFAULT_INVENTARIO_DIMS: InventarioDims = {
   pequena: { largo: TIPOS_BULTO.pequena.largo, ancho: TIPOS_BULTO.pequena.ancho, alto: TIPOS_BULTO.pequena.alto },
   mediana: { largo: TIPOS_BULTO.mediana.largo, ancho: TIPOS_BULTO.mediana.ancho, alto: TIPOS_BULTO.mediana.alto },
   grande: { largo: TIPOS_BULTO.grande.largo, ancho: TIPOS_BULTO.grande.ancho, alto: TIPOS_BULTO.grande.alto },
   tarima: { largo: TIPOS_BULTO.tarima.largo, ancho: TIPOS_BULTO.tarima.ancho, alto: TIPOS_BULTO.tarima.alto },
+  tambo: { largo: TIPOS_BULTO.tambo.largo, ancho: TIPOS_BULTO.tambo.ancho, alto: TIPOS_BULTO.tambo.alto },
 };
+
+export function bultoVolume(dims: BultoDims, forma: BultoForma = 'caja'): number {
+  if (forma === 'cilindro') {
+    const d = dims.largo;
+    return Math.PI * (d / 2) ** 2 * dims.alto;
+  }
+  return dims.largo * dims.ancho * dims.alto;
+}
 
 export function inventarioToBultos(
   counts: InventarioCounts,
@@ -151,7 +181,7 @@ export function inventarioToBultos(
   productoLabel?: string,
 ): BultoInput[] {
   const out: BultoInput[] = [];
-  (['pequena', 'mediana', 'grande', 'tarima'] as const).forEach((tipo) => {
+  INVENTARIO_TIPOS.forEach((tipo) => {
     if (counts[tipo] <= 0) return;
     const p = TIPOS_BULTO[tipo];
     const d = dims[tipo];
