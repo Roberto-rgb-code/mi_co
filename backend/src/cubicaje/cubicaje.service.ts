@@ -72,6 +72,7 @@ type ModeloDims = {
   alto_aplicacion?: number;
   pvb?: number;
   capacidad_carga?: string;
+  modelo?: string;
 };
 
 type FlatBulto = BultoInput & { id: string; label: string; color: string };
@@ -161,7 +162,9 @@ export class CubicajeService {
   }
 
   private computePack(input: CubicajeInput): CubicajeResult {
-    const mod = this.catalog[input.modelo] || this.findModeloByKey(input.modelo);
+    const resolved = this.resolveModelo(input.modelo);
+    const mod = resolved?.dims;
+    const modeloLabel = resolved?.key ?? input.modelo;
     const largo = mod?.largo_aplicacion ?? 6;
     const ancho = mod?.ancho_aplicacion ?? 2.2;
     const alto = mod?.alto_aplicacion ?? 2.2;
@@ -209,7 +212,7 @@ export class CubicajeService {
     }
 
     return {
-      modelo: input.modelo,
+      modelo: modeloLabel,
       contenedor: { largo, ancho, alto },
       bultos: colocados,
       noColocados,
@@ -436,10 +439,29 @@ export class CubicajeService {
     return undefined;
   }
 
-  private findModeloByKey(q: string): ModeloDims | undefined {
-    const key = Object.keys(this.catalog).find(
-      (k) => k.toLowerCase().replace(/\s/g, '') === q.toLowerCase().replace(/\s/g, ''),
-    );
-    return key ? this.catalog[key] : undefined;
+  private findModeloByKey(q: string): { key: string; dims: ModeloDims } | undefined {
+    const norm = (s: string) => s.toLowerCase().replace(/\s/g, '');
+    const nq = norm(q);
+    if (!nq) return undefined;
+
+    if (this.catalog[q]) return { key: q, dims: this.catalog[q] };
+
+    for (const [key, dims] of Object.entries(this.catalog)) {
+      if (norm(key) === nq) return { key, dims };
+      const label = dims.modelo;
+      if (label && norm(label) === nq) return { key, dims };
+    }
+
+    for (const [key, dims] of Object.entries(this.catalog)) {
+      if (norm(key).includes(nq) || nq.includes(norm(key))) return { key, dims };
+      const label = dims.modelo;
+      if (label && (norm(label).includes(nq) || nq.includes(norm(label)))) return { key, dims };
+    }
+
+    return undefined;
+  }
+
+  private resolveModelo(q: string): { key: string; dims: ModeloDims } | undefined {
+    return this.findModeloByKey(q);
   }
 }

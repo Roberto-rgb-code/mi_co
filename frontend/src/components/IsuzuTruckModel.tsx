@@ -197,7 +197,7 @@ export function CargoBulto({
       {isCylinder ? (
         <>
           <mesh castShadow receiveShadow>
-            <cylinderGeometry args={[Math.min(bl, bw) * 0.48, Math.min(bl, bw) * 0.48, bh * 0.96, 28]} />
+            <cylinderGeometry args={[Math.min(bl, bw) / 2, Math.min(bl, bw) / 2, bh, 28]} />
             <meshStandardMaterial
               color={fill}
               roughness={0.32}
@@ -206,7 +206,7 @@ export function CargoBulto({
               opacity={opacity}
             />
           </mesh>
-          <mesh position={[0, bh * 0.48 - 0.015, 0]}>
+          <mesh position={[0, bh / 2 - 0.015, 0]}>
             <cylinderGeometry args={[Math.min(bl, bw) * 0.42, Math.min(bl, bw) * 0.42, 0.03, 24]} />
             <meshStandardMaterial
               color="#334155"
@@ -218,7 +218,7 @@ export function CargoBulto({
           </mesh>
         </>
       ) : (
-        <RoundedBox args={[bl * 0.96, bh * 0.96, bw * 0.96]} radius={0.01} smoothness={2} castShadow receiveShadow>
+        <RoundedBox args={[bl, bh, bw]} radius={0.008} smoothness={2} castShadow receiveShadow>
           <meshStandardMaterial color={fill} roughness={0.4} transparent opacity={opacity} />
         </RoundedBox>
       )}

@@ -158,6 +158,8 @@ export function Cubicaje() {
     [selectedModelo],
   );
 
+  const displayContenedor = result?.contenedor ?? previewContenedor;
+
   const totalBultos =
     inventario.pequena + inventario.mediana + inventario.grande + inventario.tarima + inventario.tambo;
 
@@ -200,7 +202,8 @@ export function Cubicaje() {
         const data = (await res.json()) as CubicajeResult & { message?: string };
         if (!res.ok) throw new Error(data.message || 'Error al calcular cubicaje');
         setResult(data);
-        resetView();
+      if (data.modelo && data.modelo !== targetModelo) setModelo(data.modelo);
+      resetView();
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Error al calcular');
       } finally {
@@ -255,11 +258,11 @@ export function Cubicaje() {
   }, [result]);
 
   const volStats = useMemo(() => {
-    if (!previewContenedor) return null;
-    const total = previewContenedor.largo * previewContenedor.ancho * previewContenedor.alto;
+    if (!displayContenedor) return null;
+    const total = displayContenedor.largo * displayContenedor.ancho * displayContenedor.alto;
     const used = result ? calcVolumenUsado(result.bultos) : 0;
     return { total: Math.round(total * 100) / 100, used };
-  }, [previewContenedor, result]);
+  }, [displayContenedor, result]);
 
   const metrosVacios = result
     ? calcMetrosVacios(result.bultos, result.contenedor.largo)
@@ -300,12 +303,12 @@ export function Cubicaje() {
       <header className="cubicaje-toolbar">
         <div className="cubicaje-toolbar-left">
           <span className="cubicaje-brand-logo">Cubicaje ISUZU</span>
-          {selectedModelo && (
+          {selectedModelo && displayContenedor && (
             <>
-              <strong className="cubicaje-model-name">{modelo}</strong>
+              <strong className="cubicaje-model-name">{result?.modelo ?? modelo}</strong>
               <span className="cubicaje-dims-chip">
-                {(selectedModelo.largo * 100).toFixed(0)}×{(selectedModelo.ancho * 100).toFixed(0)}×
-                {(selectedModelo.alto * 100).toFixed(0)} cm
+                {(displayContenedor.largo * 100).toFixed(0)}×{(displayContenedor.ancho * 100).toFixed(0)}×
+                {(displayContenedor.alto * 100).toFixed(0)} cm
               </span>
             </>
           )}
@@ -447,7 +450,7 @@ export function Cubicaje() {
 
         <section className="cubicaje-viewport">
           <div className="cubicaje-canvas-wrap">
-            {previewContenedor ? (
+            {displayContenedor ? (
               <>
                 {result ? (
                   <CubicajeSceneFromResult
@@ -460,7 +463,7 @@ export function Cubicaje() {
                   />
                 ) : (
                   <CubicajeScene
-                    contenedor={previewContenedor}
+                    contenedor={displayContenedor}
                     preset={cameraPreset}
                     showLabels={false}
                     zoomFactor={zoomFactor}
@@ -473,12 +476,12 @@ export function Cubicaje() {
                     <span>Calculando…</span>
                   </div>
                 )}
-                {previewContenedor && (
+                {displayContenedor && (
                   <div className="cubicaje-canvas-legend" aria-label="Leyenda de medidas">
-                    <p className="cubicaje-legend-title">Espacio de carga</p>
+                    <p className="cubicaje-legend-title">Espacio de carga (1 m = 1 unidad)</p>
                     <p className="cubicaje-legend-dims">
-                      L {previewContenedor.largo.toFixed(2)} m · A {previewContenedor.ancho.toFixed(2)} m · H{' '}
-                      {previewContenedor.alto.toFixed(2)} m
+                      L {displayContenedor.largo.toFixed(2)} m · A {displayContenedor.ancho.toFixed(2)} m · H{' '}
+                      {displayContenedor.alto.toFixed(2)} m
                     </p>
                     <ul className="cubicaje-legend-colors">
                       {INVENTARIO_TIPOS.map((t) =>
@@ -575,11 +578,11 @@ export function Cubicaje() {
             ))}
           </div>
 
-          {!result && previewContenedor && (
+          {!result && displayContenedor && (
             <p className="cubicaje-sidebar-hint">
               Ajusta medidas y cantidades, luego pulsa <strong>Cargar</strong> para simular la colocación
-              dentro de la caja {previewContenedor.largo.toFixed(1)}×{previewContenedor.ancho.toFixed(1)}×
-              {previewContenedor.alto.toFixed(1)} m.
+              dentro de la caja {displayContenedor.largo.toFixed(1)}×{displayContenedor.ancho.toFixed(1)}×
+              {displayContenedor.alto.toFixed(1)} m.
             </p>
           )}
         </aside>

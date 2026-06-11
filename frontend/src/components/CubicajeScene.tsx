@@ -5,6 +5,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import * as THREE from 'three';
 import type { CameraPreset, CubicajeResult } from '../types/cubicaje';
 import { IsuzuTruckVisual, CargoBulto, getCabLength } from './IsuzuTruckModel';
+import { CargoDimensionGuides } from './CargoDimensionGuides';
 
 export interface CubicajeSceneProps {
   contenedor: CubicajeResult['contenedor'];
@@ -153,6 +154,7 @@ function SceneContent(props: CubicajeSceneProps) {
       <OrthographicCamera makeDefault position={[0, 0, 5]} near={0.1} far={200} />
       <CameraRig preset={preset} contenedor={contenedor} zoomFactor={zoomFactor} viewResetKey={viewResetKey} />
       <IsuzuTruckVisual {...contenedor} />
+      <CargoDimensionGuides largo={contenedor.largo} ancho={contenedor.ancho} alto={contenedor.alto} />
       {bultos.map((b) => (
         <CargoBulto
           key={b.id}
