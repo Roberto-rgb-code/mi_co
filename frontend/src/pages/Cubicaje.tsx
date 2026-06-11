@@ -3,8 +3,15 @@ import { Link, useSearchParams } from 'react-router-dom';
 import type { ClienteDto } from './CRM';
 import { CubicajeScene, CubicajeSceneFromResult } from '../components/CubicajeScene';
 import { CubicajeInventoryCard } from '../components/CubicajeInventoryCard';
-import type { CameraPreset, CubicajeResult, InventarioCounts, InventarioDims } from '../types/cubicaje';
-import { CAMERA_PRESETS, DEFAULT_INVENTARIO_DIMS, INVENTARIO_TIPOS, TIPOS_BULTO, inventarioToBultos } from '../types/cubicaje';
+import type { CameraPreset, CubicajeResult, InventarioConfig, InventarioCounts, InventarioDims } from '../types/cubicaje';
+import {
+  CAMERA_PRESETS,
+  DEFAULT_INVENTARIO_CONFIG,
+  DEFAULT_INVENTARIO_DIMS,
+  INVENTARIO_TIPOS,
+  TIPOS_BULTO,
+  inventarioToBultos,
+} from '../types/cubicaje';
 import { calcMetrosVacios, calcVolumenUsado } from '../utils/cubicajeAxleWeight';
 import './Cubicaje.css';
 
@@ -35,6 +42,7 @@ export function Cubicaje() {
   const [modelo, setModelo] = useState('');
   const [inventario, setInventario] = useState<InventarioCounts>(DEFAULT_INVENTARIO);
   const [bultoDims, setBultoDims] = useState<InventarioDims>(() => ({ ...DEFAULT_INVENTARIO_DIMS }));
+  const [bultoConfig, setBultoConfig] = useState<InventarioConfig>(() => ({ ...DEFAULT_INVENTARIO_CONFIG }));
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CubicajeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -160,7 +168,12 @@ export function Cubicaje() {
       setFilaFilter(null);
     }
     try {
-      const bultos = inventarioToBultos(inventario, bultoDims, selectedCliente?.productoTransportar);
+      const bultos = inventarioToBultos(
+        inventario,
+        bultoDims,
+        bultoConfig,
+        selectedCliente?.productoTransportar,
+      );
       const res = await fetch('/api/cubicaje/calcular', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -183,6 +196,11 @@ export function Cubicaje() {
 
   const setDims = (key: keyof InventarioDims, dims: InventarioDims[typeof key]) => {
     setBultoDims((prev) => ({ ...prev, [key]: dims }));
+    setResult(null);
+  };
+
+  const setConfig = (key: keyof InventarioConfig, config: InventarioConfig[typeof key]) => {
+    setBultoConfig((prev) => ({ ...prev, [key]: config }));
     setResult(null);
   };
 
@@ -478,8 +496,10 @@ export function Cubicaje() {
                 preset={TIPOS_BULTO[tipo]}
                 count={inventario[tipo]}
                 dims={bultoDims[tipo]}
+                config={bultoConfig[tipo]}
                 onChange={(n) => setInv(tipo, n)}
                 onDimsChange={(dims) => setDims(tipo, dims)}
+                onConfigChange={(config) => setConfig(tipo, config)}
                 placed={statsByTipo[tipo]?.placed}
                 unplaced={statsByTipo[tipo]?.unplaced}
               />

@@ -297,7 +297,7 @@ export class CubicajeService {
       const col = idx % layout.cols;
       result.push({
         id: tarima.id,
-        label: count > 1 ? `Tarima #${i + 1}` : tarima.label,
+        label: count > 1 ? `${tarima.label} #${i + 1}` : tarima.label,
         tipo: tarima.tipo,
         x: MARGEN + row * layout.cellL,
         y: layer * tH,

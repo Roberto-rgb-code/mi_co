@@ -150,8 +150,13 @@ const TIPO_COLOR: Record<string, string> = {
   tambo: '#0891b2',
 };
 
-function shortLabel(text: string, max = 14): string {
+function shortLabel(text: string, max = 18): string {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+}
+
+function formatPeso(peso?: number): string | null {
+  if (peso == null || !Number.isFinite(peso)) return null;
+  return `${Math.round(peso).toLocaleString('es-MX')} kg`;
 }
 
 export function CargoBulto({
@@ -162,7 +167,7 @@ export function CargoBulto({
   tipo,
   showLabel,
 }: {
-  bulto: Pick<BultoColocado, 'x' | 'y' | 'z' | 'largo' | 'ancho' | 'alto' | 'color' | 'id' | 'label'>;
+  bulto: Pick<BultoColocado, 'x' | 'y' | 'z' | 'largo' | 'ancho' | 'alto' | 'color' | 'id' | 'label' | 'pesoKg'>;
   box: { largo: number; ancho: number; alto: number };
   dimmed: boolean;
   highlighted: boolean;
@@ -183,7 +188,9 @@ export function CargoBulto({
   const opacity = dimmed ? 0.18 : 0.94;
   const isCylinder = tipo === 'tambo';
   const minSize = isCylinder ? Math.min(bl, bw) : Math.min(bl, bh, bw);
-  const showTag = showLabel && !dimmed && minSize > 0.35;
+  const showTag = showLabel && !dimmed && minSize > 0.22;
+  const pesoText = formatPeso(bulto.pesoKg);
+  const tagSmall = minSize < 0.45;
 
   return (
     <group position={[cx, cy, cz]}>
@@ -216,8 +223,11 @@ export function CargoBulto({
         </RoundedBox>
       )}
       {showTag && (
-        <Html center position={[0, bh * 0.52, 0]} style={{ pointerEvents: 'none' }} zIndexRange={[100, 0]}>
-          <span className="cubicaje-bulto-tag">{shortLabel(bulto.label)}</span>
+        <Html center position={[0, bh * 0.55, 0]} style={{ pointerEvents: 'none' }} zIndexRange={[100, 0]}>
+          <span className={`cubicaje-bulto-tag ${tagSmall ? 'cubicaje-bulto-tag--sm' : ''}`}>
+            <span className="cubicaje-bulto-tag-name">{shortLabel(bulto.label)}</span>
+            {pesoText && <span className="cubicaje-bulto-tag-weight">{pesoText}</span>}
+          </span>
         </Html>
       )}
     </group>

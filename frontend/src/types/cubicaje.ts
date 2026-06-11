@@ -167,6 +167,29 @@ export const DEFAULT_INVENTARIO_DIMS: InventarioDims = {
   tambo: { largo: TIPOS_BULTO.tambo.largo, ancho: TIPOS_BULTO.tambo.ancho, alto: TIPOS_BULTO.tambo.alto },
 };
 
+export interface InventarioItemConfig {
+  pesoKg: number;
+  /** Nombre en etiqueta 3D; vacío = nombre del preset */
+  etiqueta: string;
+}
+
+export type InventarioConfig = Record<InventarioTipoId, InventarioItemConfig>;
+
+export const DEFAULT_INVENTARIO_CONFIG: InventarioConfig = Object.fromEntries(
+  INVENTARIO_TIPOS.map((tipo) => [tipo, { pesoKg: TIPOS_BULTO[tipo].pesoKg, etiqueta: '' }]),
+) as InventarioConfig;
+
+export function resolveInventarioLabel(
+  tipo: InventarioTipoId,
+  config: InventarioConfig,
+  productoLabel?: string,
+): string {
+  const custom = config[tipo].etiqueta.trim();
+  if (custom) return custom;
+  if (tipo === 'tarima' && productoLabel) return `Tarima (${productoLabel})`;
+  return TIPOS_BULTO[tipo].label;
+}
+
 export function bultoVolume(dims: BultoDims, forma: BultoForma = 'caja'): number {
   if (forma === 'cilindro') {
     const d = dims.largo;
@@ -178,6 +201,7 @@ export function bultoVolume(dims: BultoDims, forma: BultoForma = 'caja'): number
 export function inventarioToBultos(
   counts: InventarioCounts,
   dims: InventarioDims = DEFAULT_INVENTARIO_DIMS,
+  config: InventarioConfig = DEFAULT_INVENTARIO_CONFIG,
   productoLabel?: string,
 ): BultoInput[] {
   const out: BultoInput[] = [];
@@ -185,16 +209,17 @@ export function inventarioToBultos(
     if (counts[tipo] <= 0) return;
     const p = TIPOS_BULTO[tipo];
     const d = dims[tipo];
+    const c = config[tipo];
     out.push({
       id: tipo,
-      label: tipo === 'tarima' && productoLabel ? `Tarima (${productoLabel})` : p.label,
+      label: resolveInventarioLabel(tipo, config, productoLabel),
       tipo,
       largo: d.largo,
       ancho: d.ancho,
       alto: d.alto,
       cantidad: counts[tipo],
       color: p.color,
-      pesoKg: p.pesoKg,
+      pesoKg: c.pesoKg,
     });
   });
   return out;

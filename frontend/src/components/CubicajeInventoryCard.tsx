@@ -1,13 +1,15 @@
 import type { CSSProperties } from 'react';
-import type { BultoDims, BultoForma, TipoBultoPreset } from '../types/cubicaje';
+import type { BultoDims, BultoForma, InventarioItemConfig, TipoBultoPreset } from '../types/cubicaje';
 import { bultoVolume } from '../types/cubicaje';
 
 interface Props {
   preset: TipoBultoPreset;
   count: number;
   dims: BultoDims;
+  config: InventarioItemConfig;
   onChange: (n: number) => void;
   onDimsChange: (dims: BultoDims) => void;
+  onConfigChange: (config: InventarioItemConfig) => void;
   placed?: number;
   unplaced?: number;
   compact?: boolean;
@@ -109,12 +111,54 @@ function DimsEditor({
   );
 }
 
+function parsePeso(value: string, fallback: number): number {
+  const n = parseFloat(value);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+function MetaEditor({
+  config,
+  onConfigChange,
+  presetLabel,
+}: {
+  config: InventarioItemConfig;
+  onConfigChange: (config: InventarioItemConfig) => void;
+  presetLabel: string;
+}) {
+  return (
+    <div className="cubicaje-inv-meta-fields">
+      <label className="cubicaje-inv-meta-field cubicaje-inv-meta-field--wide">
+        <span>Etiqueta</span>
+        <input
+          type="text"
+          value={config.etiqueta}
+          placeholder={presetLabel}
+          maxLength={40}
+          onChange={(e) => onConfigChange({ ...config, etiqueta: e.target.value })}
+        />
+      </label>
+      <label className="cubicaje-inv-meta-field">
+        <span>Peso (kg)</span>
+        <input
+          type="number"
+          min={1}
+          step={1}
+          value={config.pesoKg}
+          onChange={(e) => onConfigChange({ ...config, pesoKg: parsePeso(e.target.value, config.pesoKg) })}
+        />
+      </label>
+    </div>
+  );
+}
+
 export function CubicajeInventoryCard({
   preset,
   count,
   dims,
+  config,
   onChange,
   onDimsChange,
+  onConfigChange,
   placed,
   unplaced,
   compact = false,
@@ -174,8 +218,9 @@ export function CubicajeInventoryCard({
           </span>
         </div>
         <p className="cubicaje-inv-meta">
-          Vol. {vol} m³ · ~{preset.pesoKg} kg/u
+          Vol. {vol} m³ · {config.pesoKg} kg/u
         </p>
+        <MetaEditor config={config} onConfigChange={onConfigChange} presetLabel={preset.label} />
         {(placed != null || unplaced != null) && (
           <p className="cubicaje-inv-status">
             {placed != null && <span className="ok">{placed} colocados</span>}

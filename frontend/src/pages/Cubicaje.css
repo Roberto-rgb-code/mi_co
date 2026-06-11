@@ -759,14 +759,74 @@
 
 /* Etiquetas HTML flotantes en bultos (dentro del canvas R3F) */
 .cubicaje-bulto-tag {
-  display: inline-block;
-  padding: 0.12rem 0.35rem;
-  background: rgba(15, 23, 42, 0.82);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05rem;
+  padding: 0.18rem 0.42rem;
+  background: rgba(15, 23, 42, 0.88);
   color: #fff;
   font-size: 10px;
   font-weight: 600;
-  border-radius: 4px;
+  border-radius: 5px;
   white-space: nowrap;
-  line-height: 1.2;
+  line-height: 1.15;
   transform: translateY(-50%);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.cubicaje-bulto-tag--sm {
+  font-size: 8px;
+  padding: 0.12rem 0.3rem;
+}
+
+.cubicaje-bulto-tag-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cubicaje-bulto-tag-weight {
+  font-size: 0.85em;
+  font-weight: 500;
+  color: #cbd5e1;
+}
+
+.cubicaje-inv-meta-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.05rem 0 0.1rem;
+}
+
+.cubicaje-inv-meta-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.cubicaje-inv-meta-field--wide {
+  flex: 1 1 100%;
+}
+
+.cubicaje-inv-meta-field span {
+  font-size: 0.58rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+.cubicaje-inv-meta-field input {
+  padding: 0.22rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 0.72rem;
+  width: 100%;
+}
+
+.cubicaje-inv-meta-field:not(.cubicaje-inv-meta-field--wide) input {
+  width: 72px;
 }
