@@ -224,11 +224,9 @@ export function Cubicaje() {
       setBultoConfig(config);
       let targetModelo = modelo;
       if (data.modelo) {
-        const matched = matchModelo(data.modelo, modelos);
-        if (matched) {
-          setModelo(matched);
-          targetModelo = matched;
-        }
+        const matched = matchModelo(data.modelo, modelos) ?? data.modelo;
+        setModelo(matched);
+        targetModelo = matched;
       }
       if (data.autoCalcular) {
         await runCalcular(targetModelo, inv, dims, config);

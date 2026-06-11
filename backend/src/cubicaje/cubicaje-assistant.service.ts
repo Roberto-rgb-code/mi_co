@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { CubicajeService, type BultoInput } from './cubicaje.service';
 
 const DEFAULT_MODEL = 'gpt-4o-mini';
 
@@ -33,10 +34,23 @@ export interface CubicajeAsistenteResponse {
   aplicar: boolean;
   autoCalcular: boolean;
   modelo?: string;
+  utilizacionPct?: number;
+  pesoTotalKg?: number;
   items: CubicajeAsistenteItem[];
 }
 
 const TIPOS_VALIDOS = new Set<CubicajeAsistenteTipo>(['pequena', 'mediana', 'grande', 'tarima', 'tambo']);
+
+const ITEM_PRESETS: Record<
+  CubicajeAsistenteTipo,
+  { label: string; largo: number; ancho: number; alto: number; pesoKg: number; color: string }
+> = {
+  pequena: { label: 'Caja pequeña', largo: 0.3, ancho: 0.2, alto: 0.15, pesoKg: 15, color: '#22c55e' },
+  mediana: { label: 'Caja mediana', largo: 0.5, ancho: 0.4, alto: 0.3, pesoKg: 35, color: '#3b82f6' },
+  grande: { label: 'Caja grande', largo: 0.75, ancho: 0.5, alto: 0.6, pesoKg: 80, color: '#f97316' },
+  tarima: { label: 'Tarima', largo: 1.2, ancho: 1.0, alto: 1.5, pesoKg: 700, color: '#c8102e' },
+  tambo: { label: 'Tambo', largo: 0.585, ancho: 0.585, alto: 0.88, pesoKg: 200, color: '#0891b2' },
+};
 
 const PRESETS = `
 Tipos de mercancía (campo "tipo"):
@@ -44,15 +58,19 @@ Tipos de mercancía (campo "tipo"):
 - mediana: caja mediana (default 0.5×0.4×0.3 m, 35 kg)
 - grande: caja grande (default 0.75×0.5×0.6 m, 80 kg)
 - tarima: tarima/pallet (default 1.2×1×1.5 m, 700 kg)
-- tambo: tambo/cilindro/drum (default Ø0.58 m × 0.87 m alto, 200 kg). Para tambo usa largo=ancho=diámetro en metros.
+- tambo: tambo/cilindro (default tambo industrial 200 L ≈ Ø0.585 m × 0.88 m alto, 200 kg). largo=ancho=diámetro en metros.
 
-Medidas siempre en METROS. Peso en kg por unidad.
-Si el usuario da cm, convierte a metros (ej. 120 cm → 1.2 m).
+Medidas siempre en METROS. Peso en kg por UNIDAD (no peso total).
+Si el usuario da cm, convierte (120 cm → 1.2 m).
+Si dice "200 litros" para tambo, usa Ø0.585 m y alto 0.88 m salvo que indique otras medidas.
+Si dice peso total, divide entre la cantidad para obtener pesoKg por unidad.
 `.trim();
 
 @Injectable()
 export class CubicajeAssistantService {
   private readonly logger = new Logger(CubicajeAssistantService.name);
+
+  constructor(private readonly cubicaje: CubicajeService) {}
 
   async parseCarga(input: CubicajeAsistenteInput): Promise<CubicajeAsistenteResponse> {
     const apiKey = process.env.OPENAI_API_KEY?.trim();
@@ -72,43 +90,37 @@ export class CubicajeAssistantService {
     }
 
     const model = process.env.OPENAI_MODEL?.trim() || DEFAULT_MODEL;
-    const modelos = (input.modelosDisponibles || []).slice(0, 80);
-    const modelosBlock =
-      modelos.length > 0
-        ? `Camiones ISUZU disponibles (usa el nombre exacto en "modelo" si recomiendas uno):\n${modelos.join('\n')}`
-        : 'No se envió lista de camiones; deja "modelo" vacío si no hay recomendación.';
 
     const contextBlock = input.clientContext?.trim()
       ? `\nContexto del cliente CRM:\n${input.clientContext.trim().slice(0, 1500)}`
       : '';
 
     const truckBlock = input.modeloActual?.trim()
-      ? `\nCamión seleccionado actualmente en la UI: ${input.modeloActual.trim()}`
+      ? `\nCamión seleccionado en la UI (NO lo recomiendes automáticamente; el sistema elegirá el más adecuado): ${input.modeloActual.trim()}`
       : '';
 
-    const system = `Eres el asistente de cubicaje 3D de ISUZU México. El usuario describe mercancía en lenguaje natural y tú configuras la carga para simular colocación en el camión.
+    const system = `Eres el asistente de cubicaje 3D de ISUZU México. Interpretas la mercancía que el usuario quiere cargar.
 
 ${PRESETS}
+${truckBlock}${contextBlock}
 
-${modelosBlock}${truckBlock}${contextBlock}
-
-Responde SIEMPRE con un JSON válido (sin markdown) con esta forma:
+Responde SIEMPRE con JSON válido (sin markdown):
 {
-  "reply": "mensaje breve en español explicando qué configuraste o pidiendo aclaración",
-  "aplicar": true si pudiste interpretar cantidades/tipos de mercancía; false si solo es pregunta o falta info crítica,
-  "autoCalcular": true si aplicar=true y hay al menos un ítem con cantidad>0 (simular de inmediato),
-  "modelo": "nombre exacto del camión recomendado o null",
+  "reply": "mensaje breve en español (sin nombrar camión; el sistema lo calcula)",
+  "aplicar": true si interpretaste cantidades/tipos; false si falta info,
+  "autoCalcular": true si aplicar=true y hay ítems con cantidad>0,
+  "modelo": null,
   "items": [
-    { "tipo": "tarima", "cantidad": 8, "largo": 1.2, "ancho": 1, "alto": 1.5, "pesoKg": 700, "etiqueta": "Aceite" }
+    { "tipo": "tambo", "cantidad": 6, "largo": 0.585, "ancho": 0.585, "alto": 0.88, "pesoKg": 220, "etiqueta": "Aceite" }
   ]
 }
 
 Reglas:
-- "items" solo incluye tipos con cantidad > 0. Omite medidas/peso si el usuario no los dio (el frontend usará defaults).
-- Si mezcla varios tipos, devuelve varios objetos en items.
-- etiqueta: nombre corto del producto si el usuario lo menciona; si no, cadena vacía "".
-- Si el usuario pide modificar ("agrega 4 tambos"), devuelve la carga COMPLETA resultante, no solo el delta.
-- reply amigable, máximo 3 oraciones.`;
+- "modelo" SIEMPRE null (el backend elige el camión más pequeño del catálogo que quepa).
+- items: solo tipos con cantidad>0. Carga completa en cada respuesta, no solo deltas.
+- etiqueta: producto si lo menciona; si no "".
+- pesoKg: por unidad, no total.
+- reply: máximo 2 oraciones, confirma qué configuraste.`;
 
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -118,7 +130,7 @@ Reglas:
       },
       body: JSON.stringify({
         model,
-        temperature: 0.15,
+        temperature: 0.1,
         max_tokens: 1200,
         response_format: { type: 'json_object' },
         messages: [
@@ -142,7 +154,6 @@ Reglas:
       reply?: string;
       aplicar?: boolean;
       autoCalcular?: boolean;
-      modelo?: string | null;
       items?: unknown[];
     };
     try {
@@ -153,20 +164,76 @@ Reglas:
 
     const items = this.sanitizeItems(parsed.items);
     const aplicar = Boolean(parsed.aplicar) && items.some((i) => i.cantidad > 0);
-    const reply =
+
+    let modelo: string | undefined;
+    let utilizacionPct: number | undefined;
+    let pesoTotalKg: number | undefined;
+    let reply =
       typeof parsed.reply === 'string' && parsed.reply.trim()
         ? parsed.reply.trim().slice(0, 2000)
         : aplicar
           ? 'Listo, configuré la carga según tu descripción.'
           : 'Cuéntame qué mercancía, cantidades, medidas y peso quieres cargar.';
 
+    if (aplicar) {
+      const bultos = this.itemsToBultos(items);
+      const fit = this.cubicaje.findSmallestFittingModelo(bultos);
+      if (fit) {
+        modelo = fit.modelo;
+        utilizacionPct = fit.utilizacionVolumen;
+        pesoTotalKg = fit.pesoColocadoKg;
+        reply = this.buildReplyWithTruck(items, fit, reply);
+      } else {
+        reply += ' No encontré un camión del catálogo donde quepa toda la carga; prueba reducir cantidad o revisa medidas.';
+      }
+    }
+
     return {
       reply,
       aplicar,
       autoCalcular: aplicar && parsed.autoCalcular !== false,
-      modelo: typeof parsed.modelo === 'string' && parsed.modelo.trim() ? parsed.modelo.trim().slice(0, 120) : undefined,
+      modelo,
+      utilizacionPct,
+      pesoTotalKg,
       items: aplicar ? items : [],
     };
+  }
+
+  private buildReplyWithTruck(
+    items: CubicajeAsistenteItem[],
+    fit: { modelo: string; utilizacionVolumen: number; pesoColocadoKg: number },
+    llmReply: string,
+  ): string {
+    const parts = items.map((i) => {
+      const name = i.etiqueta?.trim() || ITEM_PRESETS[i.tipo].label;
+      return `${i.cantidad}× ${name}`;
+    });
+    return (
+      `${llmReply} Camión recomendado: **${fit.modelo}** ` +
+      `(~${fit.utilizacionVolumen}% del volumen, ${Math.round(fit.pesoColocadoKg).toLocaleString('es-MX')} kg). ` +
+      `Carga: ${parts.join(', ')}.`
+    ).slice(0, 2000);
+  }
+
+  itemsToBultos(items: CubicajeAsistenteItem[]): BultoInput[] {
+    return items.map((item) => {
+      const p = ITEM_PRESETS[item.tipo];
+      const largo = item.largo ?? p.largo;
+      const ancho = item.tipo === 'tambo' ? (item.ancho ?? item.largo ?? p.ancho) : (item.ancho ?? p.ancho);
+      const alto = item.alto ?? p.alto;
+      const label = item.etiqueta?.trim() || p.label;
+      return {
+        id: item.tipo,
+        label,
+        tipo: item.tipo,
+        largo,
+        ancho,
+        alto,
+        cantidad: item.cantidad,
+        color: p.color,
+        pesoKg: item.pesoKg ?? p.pesoKg,
+      };
+    });
   }
 
   private sanitizeItems(raw: unknown): CubicajeAsistenteItem[] {
@@ -179,14 +246,17 @@ Reglas:
       if (!TIPOS_VALIDOS.has(tipo)) continue;
       const cantidad = this.clampInt(r.cantidad, 0, 999);
       if (cantidad == null || cantidad <= 0) continue;
+      const preset = ITEM_PRESETS[tipo];
       const item: CubicajeAsistenteItem = { tipo, cantidad };
       const largo = this.clampDim(r.largo);
       const ancho = this.clampDim(r.ancho);
       const alto = this.clampDim(r.alto);
       if (largo != null) item.largo = largo;
+      else if (tipo === 'tambo') item.largo = preset.largo;
       if (ancho != null) item.ancho = ancho;
+      else if (tipo === 'tambo') item.ancho = item.largo ?? preset.ancho;
       if (alto != null) item.alto = alto;
-      if (tipo === 'tambo' && largo != null && ancho == null) item.ancho = largo;
+      else if (tipo === 'tambo') item.alto = preset.alto;
       const pesoKg = this.clampInt(r.pesoKg, 1, 50000);
       if (pesoKg != null) item.pesoKg = pesoKg;
       if (typeof r.etiqueta === 'string') item.etiqueta = r.etiqueta.trim().slice(0, 40);

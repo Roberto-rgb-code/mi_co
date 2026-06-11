@@ -21,7 +21,7 @@ interface Props {
 const WELCOME: Msg = {
   role: 'assistant',
   content:
-    'Describe la mercancía en lenguaje natural: cantidades, medidas (m o cm), peso por unidad y nombre del producto.\n\n**Ejemplo:** «8 tarimas de 1.2×1×1.5 m, 700 kg cada una, producto aceite» o «12 tambos de 200 litros, 180 kg, químicos».\n\nConfiguro el inventario y puedo simular la carga en el camión automáticamente.',
+    'Describe la mercancía en lenguaje natural. Configuro cantidades, medidas, peso y etiquetas, elijo el **camión más pequeño** del catálogo que quepa y simulo la carga.\n\n**Ejemplo:** «6 tambos de 200 litros, 220 kg c/u, aceite — ¿qué camión me conviene?»',
 };
 
 export function CubicajeAssistantPanel({

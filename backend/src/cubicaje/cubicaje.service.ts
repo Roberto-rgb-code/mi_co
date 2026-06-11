@@ -123,6 +123,43 @@ export class CubicajeService {
     return { ...base, modeloSugerido, sugerencia };
   }
 
+  /** Camión más compacto del catálogo donde cabe toda la carga (peso y volumen). */
+  findSmallestFittingModelo(bultos: BultoInput[]): {
+    modelo: string;
+    utilizacionVolumen: number;
+    pesoColocadoKg: number;
+    cabenTodos: boolean;
+    pesoOk: boolean;
+  } | null {
+    if (!bultos.length) return null;
+    const candidates = Object.keys(this.catalog)
+      .map((label) => {
+        const mod = this.catalog[label];
+        return {
+          label,
+          vol:
+            (mod.largo_aplicacion ?? 6) *
+            (mod.ancho_aplicacion ?? 2.2) *
+            (mod.alto_aplicacion ?? 2.2),
+        };
+      })
+      .sort((a, b) => a.vol - b.vol);
+
+    for (const c of candidates) {
+      const trial = this.computePack({ modelo: c.label, bultos });
+      if (trial.cabenTodos && trial.pesoOk) {
+        return {
+          modelo: c.label,
+          utilizacionVolumen: trial.utilizacionVolumen,
+          pesoColocadoKg: trial.pesoColocadoKg,
+          cabenTodos: trial.cabenTodos,
+          pesoOk: trial.pesoOk,
+        };
+      }
+    }
+    return null;
+  }
+
   private computePack(input: CubicajeInput): CubicajeResult {
     const mod = this.catalog[input.modelo] || this.findModeloByKey(input.modelo);
     const largo = mod?.largo_aplicacion ?? 6;
@@ -133,13 +170,9 @@ export class CubicajeService {
     const flat = this.flattenBultos(input.bultos);
     const totalSolicitados = flat.length;
 
-    const soloTarimasUniformes =
-      input.bultos.length === 1 &&
-      input.bultos[0].tipo === 'tarima' &&
-      totalSolicitados > 0;
-
-    const colocados = soloTarimasUniformes
-      ? this.packTarimasUpright(largo, ancho, alto, flat[0], totalSolicitados)
+    const gridTipo = this.detectUniformGrid(flat);
+    const colocados = gridTipo
+      ? this.packUniformGrid(largo, ancho, alto, flat, gridTipo)
       : this.packWithAlgorithm(largo, ancho, alto, flat);
 
     const placedIds = new Set(colocados.map((b) => b.id));
@@ -254,16 +287,43 @@ export class CubicajeService {
     }));
   }
 
-  private packTarimasUpright(
+  private detectUniformGrid(flat: FlatBulto[]): 'tarima' | 'tambo' | null {
+    if (flat.length === 0) return null;
+    const tipo = flat[0].tipo;
+    if (tipo !== 'tarima' && tipo !== 'tambo') return null;
+    const ref = flat[0];
+    const same = flat.every(
+      (b) =>
+        b.tipo === tipo &&
+        Math.abs(b.largo - ref.largo) < 0.002 &&
+        Math.abs(b.ancho - ref.ancho) < 0.002 &&
+        Math.abs(b.alto - ref.alto) < 0.002,
+    );
+    return same ? tipo : null;
+  }
+
+  /** Acomodo en rejilla para tarimas o tambos uniformes (mejor distribución que bin-packing genérico). */
+  private packUniformGrid(
     contL: number,
     contW: number,
     contH: number,
-    tarima: FlatBulto,
-    count: number,
+    flat: FlatBulto[],
+    tipo: 'tarima' | 'tambo',
   ): BultoColocado[] {
-    const tL = tarima.largo;
-    const tW = tarima.ancho;
-    const tH = tarima.alto;
+    const proto = flat[0];
+    const count = flat.length;
+    const tH = proto.alto;
+    let tL: number;
+    let tW: number;
+    if (tipo === 'tambo') {
+      const d = Math.max(proto.largo, proto.ancho);
+      tL = d;
+      tW = d;
+    } else {
+      tL = proto.largo;
+      tW = proto.ancho;
+    }
+
     const usableL = contL - 2 * MARGEN;
     const usableW = contW - 2 * MARGEN;
     const usableH = contH - 2 * MARGEN;
@@ -279,7 +339,7 @@ export class CubicajeService {
       }
     };
     tryLayout(tL, tW);
-    tryLayout(tW, tL);
+    if (tipo === 'tarima') tryLayout(tW, tL);
 
     layouts.sort((a, b) => b.perLayer - a.perLayer);
     const layout = layouts[0];
@@ -291,22 +351,25 @@ export class CubicajeService {
     const result: BultoColocado[] = [];
 
     for (let i = 0; i < toPlace; i++) {
+      const src = flat[i];
       const layer = Math.floor(i / layout.perLayer);
       const idx = i % layout.perLayer;
       const row = Math.floor(idx / layout.cols);
       const col = idx % layout.cols;
+      const placedL = tipo === 'tambo' ? tL : layout.cellL;
+      const placedW = tipo === 'tambo' ? tW : layout.cellW;
       result.push({
-        id: tarima.id,
-        label: count > 1 ? `${tarima.label} #${i + 1}` : tarima.label,
-        tipo: tarima.tipo,
+        id: src.id,
+        label: src.label,
+        tipo: src.tipo,
         x: MARGEN + row * layout.cellL,
         y: layer * tH,
         z: MARGEN + col * layout.cellW,
-        largo: layout.cellL,
-        ancho: layout.cellW,
+        largo: placedL,
+        ancho: placedW,
         alto: tH,
-        color: tarima.color,
-        pesoKg: tarima.pesoKg,
+        color: src.color,
+        pesoKg: src.pesoKg,
         fila: row + 1,
         colocado: true,
       });

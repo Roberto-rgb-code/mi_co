@@ -58,9 +58,9 @@ export const TIPOS_BULTO: Record<Exclude<TipoBultoId, 'custom'>, TipoBultoPreset
   tambo: {
     id: 'tambo',
     label: 'Tambo',
-    largo: 0.58,
-    ancho: 0.58,
-    alto: 0.87,
+    largo: 0.585,
+    ancho: 0.585,
+    alto: 0.88,
     color: '#0891b2',
     pesoKg: 200,
     forma: 'cilindro',
@@ -240,6 +240,8 @@ export interface CubicajeAsistenteResponse {
   aplicar: boolean;
   autoCalcular: boolean;
   modelo?: string;
+  utilizacionPct?: number;
+  pesoTotalKg?: number;
   items: CubicajeAsistenteItem[];
 }
 
