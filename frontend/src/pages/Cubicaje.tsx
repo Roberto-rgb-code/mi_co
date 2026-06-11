@@ -1,10 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { ClienteDto } from './CRM';
+import { CubicajeAssistantPanel } from '../components/CubicajeAssistantPanel';
 import { CubicajeScene, CubicajeSceneFromResult } from '../components/CubicajeScene';
 import { CubicajeInventoryCard } from '../components/CubicajeInventoryCard';
-import type { CameraPreset, CubicajeResult, InventarioConfig, InventarioCounts, InventarioDims } from '../types/cubicaje';
+import type {
+  CameraPreset,
+  CubicajeAsistenteResponse,
+  CubicajeResult,
+  InventarioConfig,
+  InventarioCounts,
+  InventarioDims,
+} from '../types/cubicaje';
 import {
+  applyAsistenteItems,
   CAMERA_PRESETS,
   DEFAULT_INVENTARIO_CONFIG,
   DEFAULT_INVENTARIO_DIMS,
@@ -32,6 +41,16 @@ const DEFAULT_INVENTARIO: InventarioCounts = {
   tambo: 0,
 };
 
+function matchModelo(name: string, modelos: ModeloOption[]): string | undefined {
+  const q = name.trim().toLowerCase();
+  if (!q) return undefined;
+  const exact = modelos.find(
+    (m) => m.label.toLowerCase() === q || m.key.toLowerCase().replace(/_/g, ' ') === q,
+  );
+  if (exact) return exact.label;
+  return modelos.find((m) => m.label.toLowerCase().includes(q) || q.includes(m.label.toLowerCase()))?.label;
+}
+
 export function Cubicaje() {
   const [searchParams] = useSearchParams();
   const clienteIdParam = searchParams.get('cliente');
@@ -52,6 +71,7 @@ export function Cubicaje() {
   const [zoomFactor, setZoomFactor] = useState(1);
   const [viewResetKey, setViewResetKey] = useState(0);
   const [truckSearch, setTruckSearch] = useState('');
+  const [assistantOpen, setAssistantOpen] = useState(false);
 
   const setCameraView = (preset: CameraPreset) => {
     setCameraPreset(preset);
@@ -157,38 +177,65 @@ export function Cubicaje() {
     return map;
   }, [result]);
 
-  const handleCalcular = async (modeloOverride?: string) => {
-    const targetModelo = modeloOverride ?? modelo;
-    if (!targetModelo || totalBultos < 1) return;
-    if (modeloOverride) setModelo(modeloOverride);
-    setLoading(true);
-    setError(null);
-    if (!modeloOverride) {
+  const runCalcular = useCallback(
+    async (
+      targetModelo: string,
+      inv: InventarioCounts,
+      dims: InventarioDims,
+      config: InventarioConfig,
+    ) => {
+      const total = INVENTARIO_TIPOS.reduce((s, t) => s + inv[t], 0);
+      if (!targetModelo || total < 1) return;
+      setLoading(true);
+      setError(null);
       setResult(null);
       setFilaFilter(null);
-    }
-    try {
-      const bultos = inventarioToBultos(
-        inventario,
-        bultoDims,
-        bultoConfig,
-        selectedCliente?.productoTransportar,
-      );
-      const res = await fetch('/api/cubicaje/calcular', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ modelo: targetModelo, bultos }),
-      });
-      const data = (await res.json()) as CubicajeResult & { message?: string };
-      if (!res.ok) throw new Error(data.message || 'Error al calcular cubicaje');
-      setResult(data);
-      resetView();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al calcular');
-    } finally {
-      setLoading(false);
-    }
+      try {
+        const bultos = inventarioToBultos(inv, dims, config, selectedCliente?.productoTransportar);
+        const res = await fetch('/api/cubicaje/calcular', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ modelo: targetModelo, bultos }),
+        });
+        const data = (await res.json()) as CubicajeResult & { message?: string };
+        if (!res.ok) throw new Error(data.message || 'Error al calcular cubicaje');
+        setResult(data);
+        resetView();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Error al calcular');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [selectedCliente],
+  );
+
+  const handleCalcular = async (modeloOverride?: string) => {
+    const targetModelo = modeloOverride ?? modelo;
+    if (modeloOverride) setModelo(modeloOverride);
+    await runCalcular(targetModelo, inventario, bultoDims, bultoConfig);
   };
+
+  const handleAsistenteApply = useCallback(
+    async (data: CubicajeAsistenteResponse) => {
+      const { inventario: inv, dims, config } = applyAsistenteItems(data.items);
+      setInventario(inv);
+      setBultoDims(dims);
+      setBultoConfig(config);
+      let targetModelo = modelo;
+      if (data.modelo) {
+        const matched = matchModelo(data.modelo, modelos);
+        if (matched) {
+          setModelo(matched);
+          targetModelo = matched;
+        }
+      }
+      if (data.autoCalcular) {
+        await runCalcular(targetModelo, inv, dims, config);
+      }
+    },
+    [modelo, modelos, runCalcular],
+  );
 
   const setInv = (key: keyof InventarioCounts, n: number) => {
     setInventario((prev) => ({ ...prev, [key]: n }));
@@ -233,6 +280,22 @@ export function Cubicaje() {
     setResult(null);
     resetView();
   };
+
+  const modelosLabels = useMemo(() => modelos.map((m) => m.label), [modelos]);
+
+  const asistenteClientContext = useMemo(() => {
+    if (!selectedCliente) return undefined;
+    return [
+      `Cliente: ${selectedCliente.nombre}`,
+      selectedCliente.productoTransportar && `Producto: ${selectedCliente.productoTransportar}`,
+      selectedCliente.cantidadTarimas && `Tarimas CRM: ${selectedCliente.cantidadTarimas}`,
+      selectedCliente.tarimaLargo &&
+        selectedCliente.tarimaAncho &&
+        `Tarima CRM: ${selectedCliente.tarimaLargo}×${selectedCliente.tarimaAncho} m`,
+    ]
+      .filter(Boolean)
+      .join('. ');
+  }, [selectedCliente]);
 
   return (
     <div className="page cubicaje cubicaje-app">
@@ -302,6 +365,14 @@ export function Cubicaje() {
               CRM
             </Link>
           )}
+          <button
+            type="button"
+            className="cubicaje-ai-btn"
+            onClick={() => setAssistantOpen(true)}
+            title="Describir mercancía con IA"
+          >
+            ✦ Asistente IA
+          </button>
           <button
             type="button"
             className="btn-primary cubicaje-cargar-btn"
@@ -515,6 +586,15 @@ export function Cubicaje() {
           )}
         </aside>
       </div>
+
+      <CubicajeAssistantPanel
+        open={assistantOpen}
+        onClose={() => setAssistantOpen(false)}
+        modeloActual={modelo}
+        modelosDisponibles={modelosLabels}
+        clientContext={asistenteClientContext}
+        onApply={handleAsistenteApply}
+      />
     </div>
   );
 }

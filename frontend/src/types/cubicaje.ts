@@ -224,3 +224,55 @@ export function inventarioToBultos(
   });
   return out;
 }
+
+export interface CubicajeAsistenteItem {
+  tipo: InventarioTipoId;
+  cantidad: number;
+  largo?: number;
+  ancho?: number;
+  alto?: number;
+  pesoKg?: number;
+  etiqueta?: string;
+}
+
+export interface CubicajeAsistenteResponse {
+  reply: string;
+  aplicar: boolean;
+  autoCalcular: boolean;
+  modelo?: string;
+  items: CubicajeAsistenteItem[];
+}
+
+export function applyAsistenteItems(items: CubicajeAsistenteItem[]): {
+  inventario: InventarioCounts;
+  dims: InventarioDims;
+  config: InventarioConfig;
+} {
+  const inventario: InventarioCounts = {
+    pequena: 0,
+    mediana: 0,
+    grande: 0,
+    tarima: 0,
+    tambo: 0,
+  };
+  const dims: InventarioDims = { ...DEFAULT_INVENTARIO_DIMS };
+  const config: InventarioConfig = {} as InventarioConfig;
+  for (const t of INVENTARIO_TIPOS) {
+    config[t] = { ...DEFAULT_INVENTARIO_CONFIG[t] };
+  }
+
+  for (const item of items) {
+    if (!INVENTARIO_TIPOS.includes(item.tipo) || item.cantidad <= 0) continue;
+    inventario[item.tipo] = item.cantidad;
+    if (item.largo != null) dims[item.tipo].largo = item.largo;
+    if (item.ancho != null) dims[item.tipo].ancho = item.ancho;
+    if (item.alto != null) dims[item.tipo].alto = item.alto;
+    if (item.tipo === 'tambo' && item.largo != null && item.ancho == null) {
+      dims.tambo.ancho = item.largo;
+    }
+    if (item.pesoKg != null) config[item.tipo].pesoKg = item.pesoKg;
+    if (item.etiqueta != null) config[item.tipo].etiqueta = item.etiqueta;
+  }
+
+  return { inventario, dims, config };
+}
