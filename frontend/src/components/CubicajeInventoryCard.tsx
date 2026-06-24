@@ -49,7 +49,7 @@ function DimsEditor({
       <div className={`cubicaje-inv-dims ${compact ? 'cubicaje-inv-dims--sm' : ''}`}>
         <span className="cubicaje-inv-dims-label">Medidas (m)</span>
         <label>
-          Ø
+          Diámetro
           <input
             type="number"
             min={0.05}
@@ -60,7 +60,7 @@ function DimsEditor({
           />
         </label>
         <label>
-          H
+          Alto
           <input
             type="number"
             min={0.05}
@@ -78,7 +78,7 @@ function DimsEditor({
     <div className={`cubicaje-inv-dims ${compact ? 'cubicaje-inv-dims--sm' : ''}`}>
       <span className="cubicaje-inv-dims-label">Medidas (m)</span>
       <label>
-        L
+        Largo
         <input
           type="number"
           min={0.05}
@@ -88,7 +88,7 @@ function DimsEditor({
         />
       </label>
       <label>
-        A
+        Ancho
         <input
           type="number"
           min={0.05}
@@ -98,7 +98,7 @@ function DimsEditor({
         />
       </label>
       <label>
-        H
+        Alto
         <input
           type="number"
           min={0.05}
