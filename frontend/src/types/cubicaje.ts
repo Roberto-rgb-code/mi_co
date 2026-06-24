@@ -111,7 +111,9 @@ export interface BultoNoColocado {
 
 export interface CubicajeResult {
   modelo: string;
+  /** Caja útil interior (m). */
   contenedor: { largo: number; ancho: number; alto: number };
+  contenedorExterior?: { largo: number; ancho: number; alto: number };
   bultos: BultoColocado[];
   noColocados: BultoNoColocado[];
   totalSolicitados: number;

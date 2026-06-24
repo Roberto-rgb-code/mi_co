@@ -22,6 +22,7 @@ import {
   inventarioToBultos,
 } from '../types/cubicaje';
 import { calcMetrosVacios, calcVolumenUsado } from '../utils/cubicajeAxleWeight';
+import { resolveContenedorInterior } from '../utils/cubicajeDims';
 import './Cubicaje.css';
 
 interface ModeloOption {
@@ -30,6 +31,9 @@ interface ModeloOption {
   largo: number;
   ancho: number;
   alto: number;
+  largoExt: number;
+  anchoExt: number;
+  altoExt: number;
   linea?: string;
 }
 
@@ -97,14 +101,25 @@ export function Cubicaje() {
     ]).then(([clientesData, catalog]) => {
       setClientes(Array.isArray(clientesData) ? clientesData : []);
       const obj = (catalog as { modelos?: Record<string, Record<string, unknown>> }).modelos || {};
-      const list: ModeloOption[] = Object.entries(obj).map(([key, val]) => ({
-        key,
-        label: (val.modelo as string) || key,
-        largo: (val.largo_aplicacion as number) ?? 6,
-        ancho: (val.ancho_aplicacion as number) ?? 2.2,
-        alto: (val.alto_aplicacion as number) ?? 2.2,
-        linea: val.linea as string | undefined,
-      }));
+      const list: ModeloOption[] = Object.entries(obj).map(([key, val]) => {
+        const inner = resolveContenedorInterior(val as Parameters<typeof resolveContenedorInterior>[0]);
+        const ext = {
+          largo: (val.largo_aplicacion as number) ?? 6,
+          ancho: (val.ancho_aplicacion as number) ?? 2.2,
+          alto: (val.alto_aplicacion as number) ?? 2.2,
+        };
+        return {
+          key,
+          label: (val.modelo as string) || key,
+          largo: inner.largo,
+          ancho: inner.ancho,
+          alto: inner.alto,
+          largoExt: ext.largo,
+          anchoExt: ext.ancho,
+          altoExt: ext.alto,
+          linea: val.linea as string | undefined,
+        };
+      });
       list.sort((a, b) => a.label.localeCompare(b.label, 'es', { numeric: true }));
       setModelos(list);
       if (list.length > 0 && !modelo) setModelo(list[0].label);
@@ -306,10 +321,18 @@ export function Cubicaje() {
           {selectedModelo && displayContenedor && (
             <>
               <strong className="cubicaje-model-name">{result?.modelo ?? modelo}</strong>
-              <span className="cubicaje-dims-chip">
+              <span className="cubicaje-dims-chip" title="Caja útil interior (exterior en tooltip del modelo)">
                 {(displayContenedor.largo * 100).toFixed(0)}×{(displayContenedor.ancho * 100).toFixed(0)}×
-                {(displayContenedor.alto * 100).toFixed(0)} cm
+                {(displayContenedor.alto * 100).toFixed(0)} cm útil
               </span>
+              {result?.contenedorExterior && (
+                <span className="cubicaje-dims-chip cubicaje-dims-chip--muted">
+                  ext{' '}
+                  {(result.contenedorExterior.largo * 100).toFixed(0)}×
+                  {(result.contenedorExterior.ancho * 100).toFixed(0)}×
+                  {(result.contenedorExterior.alto * 100).toFixed(0)} cm
+                </span>
+              )}
             </>
           )}
         </div>

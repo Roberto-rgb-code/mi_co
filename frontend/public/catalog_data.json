@@ -37,9 +37,9 @@
           "alto_cm": null
         },
         "interior_carga_2": {
-          "largo_cm": 190,
-          "ancho_cm": 180,
-          "alto_cm": null
+          "largo_cm": 320,
+          "ancho_cm": 190,
+          "alto_cm": 190
         }
       },
       "distancia_consumo": {
@@ -96,9 +96,9 @@
           "alto_cm": null
         },
         "interior_carga_2": {
-          "largo_cm": 190,
-          "ancho_cm": 180,
-          "alto_cm": null
+          "largo_cm": 320,
+          "ancho_cm": 190,
+          "alto_cm": 190
         }
       },
       "distancia_consumo": {
@@ -155,9 +155,9 @@
           "alto_cm": null
         },
         "interior_carga_2": {
-          "largo_cm": 190,
-          "ancho_cm": 180,
-          "alto_cm": null
+          "largo_cm": 320,
+          "ancho_cm": 190,
+          "alto_cm": 190
         }
       },
       "distancia_consumo": {
@@ -214,9 +214,9 @@
           "alto_cm": null
         },
         "interior_carga_2": {
-          "largo_cm": 190,
-          "ancho_cm": 180,
-          "alto_cm": null
+          "largo_cm": 440,
+          "ancho_cm": 190,
+          "alto_cm": 190
         }
       },
       "distancia_consumo": {
@@ -260,7 +260,14 @@
       "hp": "148 @ 2800",
       "torque": "277 @ 1,280",
       "km_litro": "8.5 KM/LT",
-      "llantas": "215 / 85 R16 - 10 PR"
+      "llantas": "215 / 85 R16 - 10 PR",
+      "cubicaje_peso": {
+        "interior_carga_2": {
+          "largo_cm": 370,
+          "ancho_cm": 230,
+          "alto_cm": 210
+        }
+      }
     },
     "ELF 350H": {
       "precio_2025": 0,
@@ -286,7 +293,14 @@
       "hp": "148 @ 2800",
       "torque": "277 @ 1,280",
       "km_litro": "8.5 KM/LT",
-      "llantas": "215 / 85 R16 - 10 PR"
+      "llantas": "215 / 85 R16 - 10 PR",
+      "cubicaje_peso": {
+        "interior_carga_2": {
+          "largo_cm": 450,
+          "ancho_cm": 230,
+          "alto_cm": 210
+        }
+      }
     },
     "ELF 350K": {
       "precio_2025": 0,
@@ -312,7 +326,14 @@
       "hp": "148 @ 2800",
       "torque": "277 @ 1,280",
       "km_litro": "8.5 KM/LT",
-      "llantas": "215 / 85 R16 - 10 PR"
+      "llantas": "215 / 85 R16 - 10 PR",
+      "cubicaje_peso": {
+        "interior_carga_2": {
+          "largo_cm": 510,
+          "ancho_cm": 230,
+          "alto_cm": 210
+        }
+      }
     },
     "ELF 400F": {
       "precio_2025": 1098900,
@@ -351,9 +372,9 @@
           "alto_cm": null
         },
         "interior_carga_2": {
-          "largo_cm": 230,
-          "ancho_cm": 210,
-          "alto_cm": null
+          "largo_cm": 370,
+          "ancho_cm": 230,
+          "alto_cm": 210
         }
       },
       "distancia_consumo": {
@@ -410,9 +431,9 @@
           "alto_cm": null
         },
         "interior_carga_2": {
-          "largo_cm": 230,
-          "ancho_cm": 210,
-          "alto_cm": null
+          "largo_cm": 450,
+          "ancho_cm": 230,
+          "alto_cm": 210
         }
       },
       "distancia_consumo": {
@@ -469,9 +490,9 @@
           "alto_cm": null
         },
         "interior_carga_2": {
-          "largo_cm": 230,
-          "ancho_cm": 210,
-          "alto_cm": null
+          "largo_cm": 510,
+          "ancho_cm": 230,
+          "alto_cm": 210
         }
       },
       "distancia_consumo": {
@@ -528,9 +549,9 @@
           "alto_cm": null
         },
         "interior_carga_2": {
-          "largo_cm": 230,
-          "ancho_cm": 210,
-          "alto_cm": null
+          "largo_cm": 370,
+          "ancho_cm": 230,
+          "alto_cm": 210
         }
       },
       "distancia_consumo": {
@@ -587,9 +608,9 @@
           "alto_cm": null
         },
         "interior_carga_2": {
-          "largo_cm": 230,
-          "ancho_cm": 210,
-          "alto_cm": null
+          "largo_cm": 450,
+          "ancho_cm": 230,
+          "alto_cm": 210
         }
       },
       "distancia_consumo": {
@@ -646,9 +667,9 @@
           "alto_cm": null
         },
         "interior_carga_2": {
-          "largo_cm": 230,
-          "ancho_cm": 210,
-          "alto_cm": null
+          "largo_cm": 510,
+          "ancho_cm": 230,
+          "alto_cm": 210
         }
       },
       "distancia_consumo": {
@@ -703,9 +724,9 @@
           "alto_cm": null
         },
         "interior_carga_2": {
-          "largo_cm": 230,
-          "ancho_cm": 210,
-          "alto_cm": null
+          "largo_cm": 590,
+          "ancho_cm": 230,
+          "alto_cm": 210
         }
       },
       "distancia_consumo": {
@@ -737,7 +758,7 @@
       "largo_chasis": 6.685,
       "alto_camion": 2.352,
       "ancho_cabina": 2.04,
-      "largo_aplicacion": 6,
+      "largo_aplicacion": 5.5,
       "alto_aplicacion": 2.2,
       "ancho_aplicacion": 2.4,
       "distancia_entre_ejes": 4.47,
@@ -750,7 +771,14 @@
       "hp": "182 @ 2600",
       "torque": "372 @ 1600",
       "km_litro": "6 KM/LT",
-      "llantas": "225 / 70 R19.5 - 12 PR"
+      "llantas": "225 / 70 R19.5 - 12 PR",
+      "cubicaje_peso": {
+        "interior_carga_2": {
+          "largo_cm": 540,
+          "ancho_cm": 230,
+          "alto_cm": 210
+        }
+      }
     },
     "ELF 600H": {
       "precio_2025": 1261700,
@@ -789,9 +817,9 @@
           "alto_cm": null
         },
         "interior_carga_2": {
-          "largo_cm": 230,
-          "ancho_cm": 210,
-          "alto_cm": null
+          "largo_cm": 450,
+          "ancho_cm": 230,
+          "alto_cm": 210
         }
       },
       "distancia_consumo": {
@@ -848,9 +876,9 @@
           "alto_cm": null
         },
         "interior_carga_2": {
-          "largo_cm": 230,
-          "ancho_cm": 210,
-          "alto_cm": null
+          "largo_cm": 510,
+          "ancho_cm": 230,
+          "alto_cm": 210
         }
       },
       "distancia_consumo": {
@@ -905,9 +933,9 @@
           "alto_cm": null
         },
         "interior_carga_2": {
-          "largo_cm": 230,
-          "ancho_cm": 210,
-          "alto_cm": null
+          "largo_cm": 590,
+          "ancho_cm": 230,
+          "alto_cm": 210
         }
       },
       "distancia_consumo": {
@@ -939,7 +967,7 @@
       "largo_chasis": 7.585,
       "alto_camion": 2.356,
       "ancho_cabina": 2.04,
-      "largo_aplicacion": 6.9,
+      "largo_aplicacion": 5.5,
       "alto_aplicacion": 2.2,
       "ancho_aplicacion": 2.4,
       "distancia_entre_ejes": 4.47,
@@ -952,7 +980,14 @@
       "hp": "182 @ 2600",
       "torque": "372 @ 1600",
       "km_litro": "6 KM/LT",
-      "llantas": "225 / 70 R19.5 - 12 PR"
+      "llantas": "225 / 70 R19.5 - 12 PR",
+      "cubicaje_peso": {
+        "interior_carga_2": {
+          "largo_cm": 540,
+          "ancho_cm": 230,
+          "alto_cm": 210
+        }
+      }
     },
     "FORWARD 1100L": {
       "precio_2025": 1694600,
@@ -978,7 +1013,14 @@
       "hp": "271 @ 2400",
       "torque": "724 @ 1450",
       "km_litro": "4.5 KM/LT",
-      "llantas": "11R22.5 148 / 145"
+      "llantas": "11R22.5 148 / 145",
+      "cubicaje_peso": {
+        "interior_carga_2": {
+          "largo_cm": 610,
+          "ancho_cm": 250,
+          "alto_cm": 250
+        }
+      }
     },
     "FORWARD 1100M": {
       "precio_2025": 0,
@@ -1004,7 +1046,14 @@
       "hp": "271 @ 2400",
       "torque": "724 @ 1450",
       "km_litro": "4.5 KM/LT",
-      "llantas": "11R22.5 148 / 145"
+      "llantas": "11R22.5 148 / 145",
+      "cubicaje_peso": {
+        "interior_carga_2": {
+          "largo_cm": 675,
+          "ancho_cm": 250,
+          "alto_cm": 250
+        }
+      }
     },
     "FORWARD 1100Q": {
       "precio_2025": 1716800,
@@ -1030,7 +1079,14 @@
       "hp": "271 @ 2400",
       "torque": "724 @ 1450",
       "km_litro": "4.5 KM/LT",
-      "llantas": "11R22.5 148 / 145"
+      "llantas": "11R22.5 148 / 145",
+      "cubicaje_peso": {
+        "interior_carga_2": {
+          "largo_cm": 740,
+          "ancho_cm": 250,
+          "alto_cm": 250
+        }
+      }
     },
     "FORWARD 1400K": {
       "precio_2025": 1792700,
@@ -1056,7 +1112,14 @@
       "hp": "271 @ 2400",
       "torque": "724 @ 1450",
       "km_litro": "4.5 KM/LT",
-      "llantas": "11R22.5 148 / 145"
+      "llantas": "11R22.5 148 / 145",
+      "cubicaje_peso": {
+        "interior_carga_2": {
+          "largo_cm": 610,
+          "ancho_cm": 250,
+          "alto_cm": 250
+        }
+      }
     },
     "FORWARD 1400M": {
       "precio_2025": 0,
@@ -1082,7 +1145,14 @@
       "hp": "271 @ 2400",
       "torque": "724 @ 1450",
       "km_litro": "4.5 KM/LT",
-      "llantas": "11R22.5 148 / 145"
+      "llantas": "11R22.5 148 / 145",
+      "cubicaje_peso": {
+        "interior_carga_2": {
+          "largo_cm": 675,
+          "ancho_cm": 250,
+          "alto_cm": 250
+        }
+      }
     },
     "FORWARD 1400Q": {
       "precio_2025": 1826000,
@@ -1108,7 +1178,14 @@
       "hp": "271 @ 2400",
       "torque": "724 @ 1450",
       "km_litro": "4.5 KM/LT",
-      "llantas": "11R22.5 148 / 145"
+      "llantas": "11R22.5 148 / 145",
+      "cubicaje_peso": {
+        "interior_carga_2": {
+          "largo_cm": 740,
+          "ancho_cm": 250,
+          "alto_cm": 250
+        }
+      }
     },
     "FORWARD 800K": {
       "precio_2025": 1463400,
@@ -1134,7 +1211,14 @@
       "hp": "207 @ 2400",
       "torque": "521 @ 1600",
       "km_litro": "5.5 KM/LT",
-      "llantas": "225 / 70 R19.5 G"
+      "llantas": "225 / 70 R19.5 G",
+      "cubicaje_peso": {
+        "interior_carga_2": {
+          "largo_cm": 540,
+          "ancho_cm": 240,
+          "alto_cm": 230
+        }
+      }
     },
     "FORWARD 800M": {
       "precio_2025": 1483700,
@@ -1160,7 +1244,14 @@
       "hp": "207 @ 2400",
       "torque": "521 @ 1600",
       "km_litro": "5.5 KM/LT",
-      "llantas": "225 / 70 R19.5 G"
+      "llantas": "225 / 70 R19.5 G",
+      "cubicaje_peso": {
+        "interior_carga_2": {
+          "largo_cm": 640,
+          "ancho_cm": 240,
+          "alto_cm": 230
+        }
+      }
     },
     "ELF 600 BUS": {
       "linea": "ELF",
@@ -1185,7 +1276,14 @@
       "torque": "372 @ 1600",
       "km_litro": "6 KM/LT",
       "llantas": "225 / 70 R19.5 - 12 PR",
-      "precio_2026": 1266400
+      "precio_2026": 1266400,
+      "cubicaje_peso": {
+        "interior_carga_2": {
+          "largo_cm": 590,
+          "ancho_cm": 230,
+          "alto_cm": 210
+        }
+      }
     },
     "FORWARD 1800T": {
       "precio_2025": 1826000,
@@ -1211,7 +1309,14 @@
       "hp": "271 @ 2400",
       "torque": "724 @ 1450",
       "km_litro": "4.5 KM/LT",
-      "llantas": "11R22.5 148 / 145"
+      "llantas": "11R22.5 148 / 145",
+      "cubicaje_peso": {
+        "interior_carga_2": {
+          "largo_cm": 740,
+          "ancho_cm": 250,
+          "alto_cm": 250
+        }
+      }
     },
     "FORWARD 2000T": {
       "precio_2025": 1826000,
@@ -1237,7 +1342,14 @@
       "hp": "271 @ 2400",
       "torque": "724 @ 1450",
       "km_litro": "4.5 KM/LT",
-      "llantas": "11R22.5 148 / 145"
+      "llantas": "11R22.5 148 / 145",
+      "cubicaje_peso": {
+        "interior_carga_2": {
+          "largo_cm": 740,
+          "ancho_cm": 250,
+          "alto_cm": 250
+        }
+      }
     }
   },
   "fuentes": {

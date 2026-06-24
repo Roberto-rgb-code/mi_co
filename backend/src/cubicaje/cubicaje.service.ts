@@ -5,6 +5,7 @@ import { Container, Item, PackingService } from '3d-bin-packing-ts';
 import { detectUniformGrid, packUniformGrid } from './cubicaje-packing.util';
 import { computeAxleLoads, balanceLoadForAxles } from './cubicaje-axle.util';
 import { resolveChassisSpec } from './cubicaje-chassis';
+import { resolveContenedorExterior, resolveContenedorInterior } from './cubicaje-dims.util';
 
 export interface BultoInput {
   id?: string;
@@ -50,7 +51,10 @@ export interface BultoNoColocado {
 
 export interface CubicajeResult {
   modelo: string;
+  /** Caja útil interior donde se coloca la carga (m). */
   contenedor: { largo: number; ancho: number; alto: number };
+  /** Dimensiones exteriores de la carrocería (m). */
+  contenedorExterior?: { largo: number; ancho: number; alto: number };
   bultos: BultoColocado[];
   noColocados: BultoNoColocado[];
   totalSolicitados: number;
@@ -84,6 +88,9 @@ type ModeloDims = {
   capacidad_carga?: string;
   modelo?: string;
   distancia_entre_ejes?: number;
+  cubicaje_peso?: {
+    interior_carga_2?: { largo_cm?: number | null; ancho_cm?: number | null; alto_cm?: number | null };
+  };
 };
 
 type FlatBulto = BultoInput & { id: string; label: string; color: string };
@@ -146,12 +153,10 @@ export class CubicajeService {
     const candidates = Object.keys(this.catalog)
       .map((label) => {
         const mod = this.catalog[label];
+        const inner = resolveContenedorInterior(mod);
         return {
           label,
-          vol:
-            (mod.largo_aplicacion ?? 6) *
-            (mod.ancho_aplicacion ?? 2.2) *
-            (mod.alto_aplicacion ?? 2.2),
+          vol: inner.largo * inner.ancho * inner.alto,
         };
       })
       .sort((a, b) => a.vol - b.vol);
@@ -175,9 +180,11 @@ export class CubicajeService {
     const resolved = this.resolveModelo(input.modelo);
     const mod = resolved?.dims;
     const modeloLabel = resolved?.key ?? input.modelo;
-    const largo = mod?.largo_aplicacion ?? 6;
-    const ancho = mod?.ancho_aplicacion ?? 2.2;
-    const alto = mod?.alto_aplicacion ?? 2.2;
+    const exterior = resolveContenedorExterior(mod);
+    const interior = resolveContenedorInterior(mod);
+    const largo = interior.largo;
+    const ancho = interior.ancho;
+    const alto = interior.alto;
     const pesoMaxKg = this.resolvePesoMax(mod);
 
     const flat = this.flattenBultos(input.bultos);
@@ -236,6 +243,7 @@ export class CubicajeService {
     return {
       modelo: modeloLabel,
       contenedor: { largo, ancho, alto },
+      contenedorExterior: exterior,
       bultos: colocados,
       noColocados,
       totalSolicitados,
@@ -268,12 +276,10 @@ export class CubicajeService {
     const candidates = Object.keys(this.catalog)
       .map((key) => {
         const mod = this.catalog[key];
+        const inner = resolveContenedorInterior(mod);
         return {
           label: key,
-          vol:
-            (mod.largo_aplicacion ?? 6) *
-            (mod.ancho_aplicacion ?? 2.2) *
-            (mod.alto_aplicacion ?? 2.2),
+          vol: inner.largo * inner.ancho * inner.alto,
         };
       })
       .filter((c) => norm(c.label) !== norm(excludeModelo))

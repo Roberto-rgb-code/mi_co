@@ -77,6 +77,11 @@
   white-space: nowrap;
 }
 
+.cubicaje-dims-chip--muted {
+  font-size: 0.65rem;
+  opacity: 0.85;
+}
+
 .cubicaje-toolbar-stats {
   display: flex;
   gap: 0.45rem;

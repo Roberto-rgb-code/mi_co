@@ -38,3 +38,4 @@ coverage/
 # Distribucion_carga: ignorar artefactos generados al analizar PDFs
 Distribucion_carga/_pages/
 Distribucion_carga/_extracted.txt
+Distribucion_carga/_excel_dump.txt
