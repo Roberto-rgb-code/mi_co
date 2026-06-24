@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { Container, Item, PackingService } from '3d-bin-packing-ts';
+import { detectUniformGrid, packUniformGrid } from './cubicaje-packing.util';
 
 export interface BultoInput {
   id?: string;
@@ -78,7 +79,6 @@ type ModeloDims = {
 type FlatBulto = BultoInput & { id: string; label: string; color: string };
 
 const MM = 1000;
-const MARGEN = 0.05;
 const TARIMA_COLOR = '#c8102e';
 
 @Injectable()
@@ -173,9 +173,9 @@ export class CubicajeService {
     const flat = this.flattenBultos(input.bultos);
     const totalSolicitados = flat.length;
 
-    const gridTipo = this.detectUniformGrid(flat);
+    const gridTipo = detectUniformGrid(flat);
     const colocados = gridTipo
-      ? this.packUniformGrid(largo, ancho, alto, flat, gridTipo)
+      ? packUniformGrid(largo, ancho, alto, flat, gridTipo)
       : this.packWithAlgorithm(largo, ancho, alto, flat);
 
     const placedIds = new Set(colocados.map((b) => b.id));
@@ -290,106 +290,34 @@ export class CubicajeService {
     }));
   }
 
-  private detectUniformGrid(flat: FlatBulto[]): 'tarima' | 'tambo' | null {
-    if (flat.length === 0) return null;
-    const tipo = flat[0].tipo;
-    if (tipo !== 'tarima' && tipo !== 'tambo') return null;
-    const ref = flat[0];
-    const same = flat.every(
-      (b) =>
-        b.tipo === tipo &&
-        Math.abs(b.largo - ref.largo) < 0.002 &&
-        Math.abs(b.ancho - ref.ancho) < 0.002 &&
-        Math.abs(b.alto - ref.alto) < 0.002,
-    );
-    return same ? tipo : null;
-  }
-
-  /** Acomodo en rejilla para tarimas o tambos uniformes (mejor distribución que bin-packing genérico). */
-  private packUniformGrid(
-    contL: number,
-    contW: number,
-    contH: number,
-    flat: FlatBulto[],
-    tipo: 'tarima' | 'tambo',
-  ): BultoColocado[] {
-    const proto = flat[0];
-    const count = flat.length;
-    const tH = proto.alto;
-    let tL: number;
-    let tW: number;
-    if (tipo === 'tambo') {
-      const d = Math.max(proto.largo, proto.ancho);
-      tL = d;
-      tW = d;
-    } else {
-      tL = proto.largo;
-      tW = proto.ancho;
-    }
-
-    const usableL = contL - 2 * MARGEN;
-    const usableW = contW - 2 * MARGEN;
-    const usableH = contH - 2 * MARGEN;
-
-    type Layout = { cols: number; rows: number; cellL: number; cellW: number; perLayer: number };
-    const layouts: Layout[] = [];
-
-    const tryLayout = (cellL: number, cellW: number) => {
-      const cols = Math.floor(usableW / cellW);
-      const rows = Math.floor(usableL / cellL);
-      if (cols > 0 && rows > 0) {
-        layouts.push({ cols, rows, cellL, cellW, perLayer: cols * rows });
-      }
-    };
-    tryLayout(tL, tW);
-    if (tipo === 'tarima') tryLayout(tW, tL);
-
-    layouts.sort((a, b) => b.perLayer - a.perLayer);
-    const layout = layouts[0];
-    if (!layout) return [];
-
-    const maxLayers = Math.floor(usableH / tH);
-    const maxTotal = layout.perLayer * maxLayers;
-    const toPlace = Math.min(count, maxTotal);
-    const result: BultoColocado[] = [];
-
-    for (let i = 0; i < toPlace; i++) {
-      const src = flat[i];
-      const layer = Math.floor(i / layout.perLayer);
-      const idx = i % layout.perLayer;
-      const row = Math.floor(idx / layout.cols);
-      const col = idx % layout.cols;
-      const placedL = tipo === 'tambo' ? tL : layout.cellL;
-      const placedW = tipo === 'tambo' ? tW : layout.cellW;
-      result.push({
-        id: src.id,
-        label: src.label,
-        tipo: src.tipo,
-        x: MARGEN + row * layout.cellL,
-        y: layer * tH,
-        z: MARGEN + col * layout.cellW,
-        largo: placedL,
-        ancho: placedW,
-        alto: tH,
-        color: src.color,
-        pesoKg: src.pesoKg,
-        fila: row + 1,
-        colocado: true,
-      });
-    }
-    return this.assignFilas(result, contL);
-  }
-
   private packWithAlgorithm(
     contL: number,
     contW: number,
     contH: number,
     items: FlatBulto[],
   ): BultoColocado[] {
-    const sorted = [...items].sort(
+    const strategies: Array<(a: FlatBulto, b: FlatBulto) => number> = [
       (a, b) => b.largo * b.ancho * b.alto - a.largo * a.ancho * a.alto,
-    );
+      (a, b) => b.largo * b.ancho - a.largo * a.ancho,
+      (a, b) => Math.max(b.largo, b.ancho, b.alto) - Math.max(a.largo, a.ancho, a.alto),
+      (a, b) => b.alto - a.alto,
+    ];
 
+    let best: BultoColocado[] = [];
+    for (const cmp of strategies) {
+      const packed = this.runSinglePack(contL, contW, contH, [...items].sort(cmp));
+      if (packed.length > best.length) best = packed;
+      if (packed.length === items.length) break;
+    }
+    return this.assignFilas(best, contL);
+  }
+
+  private runSinglePack(
+    contL: number,
+    contW: number,
+    contH: number,
+    sorted: FlatBulto[],
+  ): BultoColocado[] {
     const container = new Container(
       'camion',
       Math.round(contL * MM),
@@ -409,8 +337,8 @@ export class CubicajeService {
     const result = PackingService.packSingle(container, packItems);
     const packed = result.algorithmPackingResults[0]?.packedItems ?? [];
 
-    const colocados = packed.map((p) => {
-      const src = items.find((i) => i.id === p.id);
+    return packed.map((p) => {
+      const src = sorted.find((i) => i.id === p.id);
       return {
         id: p.id,
         label: src?.label || p.id,
@@ -427,11 +355,9 @@ export class CubicajeService {
         colocado: true,
       };
     });
-    return this.assignFilas(colocados, contL);
   }
 
   private resolvePesoMax(mod?: ModeloDims): number | undefined {
-    if (mod?.pvb != null) return mod.pvb * 1000;
     if (mod?.capacidad_carga) {
       const m = mod.capacidad_carga.match(/([\d.]+)/);
       if (m) return parseFloat(m[1]) * 1000;
