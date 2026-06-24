@@ -3,6 +3,8 @@ import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { Container, Item, PackingService } from '3d-bin-packing-ts';
 import { detectUniformGrid, packUniformGrid } from './cubicaje-packing.util';
+import { computeAxleLoads, balanceLoadForAxles } from './cubicaje-axle.util';
+import { resolveChassisSpec } from './cubicaje-chassis';
 
 export interface BultoInput {
   id?: string;
@@ -62,6 +64,13 @@ export interface CubicajeResult {
   pesoOk: boolean;
   filas: number;
   mensaje: string;
+  ejeDelanteroKg?: number;
+  ejeTraseroKg?: number;
+  ejeDelanteroMaxKg?: number;
+  ejeTraseroMaxKg?: number;
+  ejeDelanteroOk?: boolean;
+  ejeTraseroOk?: boolean;
+  ejesOk?: boolean;
   /** Modelo alternativo del catálogo que sí cabe toda la carga (si aplica). */
   modeloSugerido?: string;
   sugerencia?: string;
@@ -74,6 +83,7 @@ type ModeloDims = {
   pvb?: number;
   capacidad_carga?: string;
   modelo?: string;
+  distancia_entre_ejes?: number;
 };
 
 type FlatBulto = BultoInput & { id: string; label: string; color: string };
@@ -148,7 +158,7 @@ export class CubicajeService {
 
     for (const c of candidates) {
       const trial = this.computePack({ modelo: c.label, bultos });
-      if (trial.cabenTodos && trial.pesoOk) {
+      if (trial.cabenTodos && trial.pesoOk && trial.ejesOk !== false) {
         return {
           modelo: c.label,
           utilizacionVolumen: trial.utilizacionVolumen,
@@ -172,11 +182,12 @@ export class CubicajeService {
 
     const flat = this.flattenBultos(input.bultos);
     const totalSolicitados = flat.length;
+    const chassis = resolveChassisSpec(modeloLabel, mod);
 
     const gridTipo = detectUniformGrid(flat);
-    const colocados = gridTipo
-      ? packUniformGrid(largo, ancho, alto, flat, gridTipo)
-      : this.packWithAlgorithm(largo, ancho, alto, flat);
+    let colocados = gridTipo
+      ? packUniformGrid(largo, ancho, alto, flat, gridTipo, chassis)
+      : this.packWithAlgorithm(largo, ancho, alto, flat, chassis);
 
     const placedIds = new Set(colocados.map((b) => b.id));
     const noColocados: BultoNoColocado[] = flat
@@ -201,6 +212,9 @@ export class CubicajeService {
     const pesoEstimadoKg = input.pesoEstimadoKg ?? (pesoColocadoKg > 0 ? pesoColocadoKg : undefined);
     const pesoOk = pesoMaxKg == null || pesoEstimadoKg == null || pesoEstimadoKg <= pesoMaxKg;
 
+    const axle = computeAxleLoads(colocados, chassis);
+    const ejesOk = axle.ejeDelanteroOk && axle.ejeTraseroOk;
+
     const filas = colocados.length > 0 ? Math.max(...colocados.map((b) => b.fila)) : 0;
 
     let mensaje = cabenTodos
@@ -209,6 +223,14 @@ export class CubicajeService {
 
     if (!pesoOk && pesoMaxKg != null && pesoEstimadoKg != null) {
       mensaje += ` Peso (${Math.round(pesoEstimadoKg)} kg) supera capacidad (~${Math.round(pesoMaxKg)} kg).`;
+    }
+    if (!ejesOk && colocados.length > 0) {
+      if (!axle.ejeDelanteroOk) {
+        mensaje += ` Eje delantero (${axle.ejeDelanteroKg} kg) supera límite (~${axle.ejeDelanteroMaxKg} kg).`;
+      }
+      if (!axle.ejeTraseroOk) {
+        mensaje += ` Eje trasero (${axle.ejeTraseroKg} kg) supera límite (~${axle.ejeTraseroMaxKg} kg).`;
+      }
     }
 
     return {
@@ -227,6 +249,13 @@ export class CubicajeService {
       pesoOk,
       filas,
       mensaje,
+      ejeDelanteroKg: axle.ejeDelanteroKg,
+      ejeTraseroKg: axle.ejeTraseroKg,
+      ejeDelanteroMaxKg: axle.ejeDelanteroMaxKg,
+      ejeTraseroMaxKg: axle.ejeTraseroMaxKg,
+      ejeDelanteroOk: axle.ejeDelanteroOk,
+      ejeTraseroOk: axle.ejeTraseroOk,
+      ejesOk,
     };
   }
 
@@ -252,7 +281,7 @@ export class CubicajeService {
 
     for (const c of candidates) {
       const trial = this.computePack({ ...input, modelo: c.label });
-      if (trial.cabenTodos && trial.pesoOk) {
+      if (trial.cabenTodos && trial.pesoOk && trial.ejesOk !== false) {
         return {
           modelo: c.label,
           mensaje: `${c.label} cabe toda la carga (${trial.utilizacionVolumen}% del volumen).`,
@@ -295,6 +324,7 @@ export class CubicajeService {
     contW: number,
     contH: number,
     items: FlatBulto[],
+    chassis?: ReturnType<typeof resolveChassisSpec>,
   ): BultoColocado[] {
     const strategies: Array<(a: FlatBulto, b: FlatBulto) => number> = [
       (a, b) => b.largo * b.ancho * b.alto - a.largo * a.ancho * a.alto,
@@ -309,7 +339,9 @@ export class CubicajeService {
       if (packed.length > best.length) best = packed;
       if (packed.length === items.length) break;
     }
-    return this.assignFilas(best, contL);
+    let placed = this.assignFilas(best, contL);
+    if (chassis) placed = balanceLoadForAxles(placed, contL, chassis);
+    return placed;
   }
 
   private runSinglePack(

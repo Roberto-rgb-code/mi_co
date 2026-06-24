@@ -347,6 +347,28 @@ export function Cubicaje() {
               <strong>{result.utilizacionVolumen}%</strong>
             </div>
           )}
+          {result?.ejeDelanteroKg != null && (
+            <div className="cubicaje-stat-chip" title="Según ficha técnica ISUZU">
+              <span>Eje del.</span>
+              <strong className={result.ejeDelanteroOk === false ? 'warn' : ''}>
+                {result.ejeDelanteroKg.toLocaleString('es-MX')}
+                {result.ejeDelanteroMaxKg != null && (
+                  <small> / {result.ejeDelanteroMaxKg.toLocaleString('es-MX')}</small>
+                )}
+              </strong>
+            </div>
+          )}
+          {result?.ejeTraseroKg != null && (
+            <div className="cubicaje-stat-chip" title="Según ficha técnica ISUZU">
+              <span>Eje tras.</span>
+              <strong className={result.ejeTraseroOk === false ? 'warn' : ''}>
+                {result.ejeTraseroKg.toLocaleString('es-MX')}
+                {result.ejeTraseroMaxKg != null && (
+                  <small> / {result.ejeTraseroMaxKg.toLocaleString('es-MX')}</small>
+                )}
+              </strong>
+            </div>
+          )}
         </div>
 
         <div className="cubicaje-toolbar-right">

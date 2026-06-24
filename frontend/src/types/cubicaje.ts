@@ -125,6 +125,13 @@ export interface CubicajeResult {
   pesoOk: boolean;
   filas: number;
   mensaje: string;
+  ejeDelanteroKg?: number;
+  ejeTraseroKg?: number;
+  ejeDelanteroMaxKg?: number;
+  ejeTraseroMaxKg?: number;
+  ejeDelanteroOk?: boolean;
+  ejeTraseroOk?: boolean;
+  ejesOk?: boolean;
   modeloSugerido?: string;
   sugerencia?: string;
 }

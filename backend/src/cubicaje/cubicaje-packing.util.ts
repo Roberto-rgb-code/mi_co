@@ -1,4 +1,6 @@
 import type { BultoColocado } from './cubicaje.service';
+import { balanceLoadForAxles } from './cubicaje-axle.util';
+import type { ChassisAxleSpec } from './cubicaje-chassis';
 
 export type FlatBultoLike = {
   id: string;
@@ -117,12 +119,29 @@ function assignFilas(bultos: BultoColocado[], contLargo: number): BultoColocado[
   }));
 }
 
+function centerPartialLayer(slots: Array<{ row: number; col: number; layer: number }>, layout: Layout, toPlace: number): void {
+  const perLayer = layout.perLayer;
+  const layers = Math.ceil(toPlace / perLayer);
+  const lastLayerStart = (layers - 1) * perLayer;
+  const lastLayerCount = toPlace - lastLayerStart;
+  if (lastLayerCount >= perLayer || lastLayerCount <= 0) return;
+
+  const rowsInLast = Math.ceil(lastLayerCount / layout.cols);
+  const rowOffset = Math.floor((layout.rows - rowsInLast) / 2);
+  if (rowOffset <= 0) return;
+
+  for (let i = lastLayerStart; i < toPlace; i++) {
+    slots[i] = { ...slots[i], row: slots[i].row + rowOffset };
+  }
+}
+
 export function packUniformGrid(
   contL: number,
   contW: number,
   contH: number,
   flat: FlatBultoLike[],
   tipo: GridTipo,
+  chassis?: ChassisAxleSpec,
 ): BultoColocado[] {
   const sorted = [...flat].sort((a, b) => (b.pesoKg ?? 0) - (a.pesoKg ?? 0));
   const proto = sorted[0];
@@ -165,6 +184,8 @@ export function packUniformGrid(
     }
   }
 
+  centerPartialLayer(slots, layout, toPlace);
+
   for (let i = 0; i < toPlace; i++) {
     const src = sorted[i];
     const { row, col, layer } = slots[i];
@@ -187,5 +208,7 @@ export function packUniformGrid(
     });
   }
 
-  return assignFilas(centerLoad(result, contL, contW), contL);
+  let placed = assignFilas(centerLoad(result, contL, contW), contL);
+  if (chassis) placed = balanceLoadForAxles(placed, contL, chassis);
+  return placed;
 }
