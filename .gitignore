@@ -34,3 +34,7 @@ coverage/
 
 # Excel temporal (Office)
 ~$*
+
+# Distribucion_carga: ignorar artefactos generados al analizar PDFs
+Distribucion_carga/_pages/
+Distribucion_carga/_extracted.txt
