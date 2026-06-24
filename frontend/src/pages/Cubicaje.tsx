@@ -14,6 +14,7 @@ import type {
 } from '../types/cubicaje';
 import {
   applyAsistenteItems,
+  buildInventarioSnapshot,
   CAMERA_PRESETS,
   DEFAULT_INVENTARIO_CONFIG,
   DEFAULT_INVENTARIO_DIMS,
@@ -41,7 +42,7 @@ const DEFAULT_INVENTARIO: InventarioCounts = {
   pequena: 0,
   mediana: 0,
   grande: 0,
-  tarima: 8,
+  tarima: 0,
   tambo: 0,
 };
 
@@ -212,6 +213,7 @@ export function Cubicaje() {
       inv: InventarioCounts,
       dims: InventarioDims,
       config: InventarioConfig,
+      opts?: { autoRetrySuggested?: boolean },
     ) => {
       const total = INVENTARIO_TIPOS.reduce((s, t) => s + inv[t], 0);
       if (!targetModelo || total < 1) return;
@@ -229,15 +231,27 @@ export function Cubicaje() {
         const data = (await res.json()) as CubicajeResult & { message?: string };
         if (!res.ok) throw new Error(data.message || 'Error al calcular cubicaje');
         setResult(data);
-      if (data.modelo && data.modelo !== targetModelo) setModelo(data.modelo);
-      resetView();
+        if (data.modelo && data.modelo !== targetModelo) setModelo(data.modelo);
+        if (
+          opts?.autoRetrySuggested &&
+          data.modeloSugerido &&
+          (!data.cabenTodos || !data.pesoOk) &&
+          data.modeloSugerido !== targetModelo
+        ) {
+          const suggested = matchModelo(data.modeloSugerido, modelos) ?? data.modeloSugerido;
+          setModelo(suggested);
+          await runCalcular(suggested, inv, dims, config, { autoRetrySuggested: false });
+          return;
+        }
+        resetView();
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Error al calcular');
+        throw e;
       } finally {
         setLoading(false);
       }
     },
-    [selectedCliente],
+    [selectedCliente, modelos],
   );
 
   const handleCalcular = async (modeloOverride?: string) => {
@@ -248,21 +262,50 @@ export function Cubicaje() {
 
   const handleAsistenteApply = useCallback(
     async (data: CubicajeAsistenteResponse) => {
-      const { inventario: inv, dims, config } = applyAsistenteItems(data.items);
-      setInventario(inv);
-      setBultoDims(dims);
-      setBultoConfig(config);
+      let inv = inventario;
+      let dims = bultoDims;
+      let config = bultoConfig;
+
+      if (data.aplicar && data.items?.length) {
+        const applied = applyAsistenteItems(data.items);
+        inv = applied.inventario;
+        dims = applied.dims;
+        config = applied.config;
+        setInventario(inv);
+        setBultoDims(dims);
+        setBultoConfig(config);
+      }
+
       let targetModelo = modelo;
       if (data.modelo) {
-        const matched = matchModelo(data.modelo, modelos) ?? data.modelo;
-        setModelo(matched);
-        targetModelo = matched;
+        targetModelo = matchModelo(data.modelo, modelos) ?? data.modelo;
+      } else if (data.autoCalcular) {
+        const bultos = inventarioToBultos(inv, dims, config, selectedCliente?.productoTransportar);
+        const rec = await fetch('/api/cubicaje/recomendar-modelo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bultos }),
+        });
+        if (rec.ok) {
+          const fit = (await rec.json()) as { modelo?: string | null };
+          if (fit.modelo) {
+            targetModelo = matchModelo(fit.modelo, modelos) ?? fit.modelo;
+          }
+        }
       }
-      if (data.autoCalcular) {
-        await runCalcular(targetModelo, inv, dims, config);
+
+      setModelo(targetModelo);
+
+      if (data.autoCalcular !== false && INVENTARIO_TIPOS.some((t) => inv[t] > 0)) {
+        await runCalcular(targetModelo, inv, dims, config, { autoRetrySuggested: true });
       }
     },
-    [modelo, modelos, runCalcular],
+    [inventario, bultoDims, bultoConfig, modelo, modelos, runCalcular, selectedCliente],
+  );
+
+  const inventarioSnapshot = useMemo(
+    () => buildInventarioSnapshot(inventario, bultoDims, bultoConfig),
+    [inventario, bultoDims, bultoConfig],
   );
 
   const setInv = (key: keyof InventarioCounts, n: number) => {
@@ -657,6 +700,7 @@ export function Cubicaje() {
         modeloActual={modelo}
         modelosDisponibles={modelosLabels}
         clientContext={asistenteClientContext}
+        inventarioActual={inventarioSnapshot}
         onApply={handleAsistenteApply}
       />
     </div>

@@ -244,6 +244,12 @@ export interface CubicajeAsistenteItem {
   etiqueta?: string;
 }
 
+export interface InventarioActualInput {
+  counts: Partial<Record<InventarioTipoId, number>>;
+  dims?: Partial<Record<InventarioTipoId, BultoDims>>;
+  config?: Partial<Record<InventarioTipoId, InventarioItemConfig>>;
+}
+
 export interface CubicajeAsistenteResponse {
   reply: string;
   aplicar: boolean;
@@ -286,4 +292,28 @@ export function applyAsistenteItems(items: CubicajeAsistenteItem[]): {
   }
 
   return { inventario, dims, config };
+}
+
+export function buildInventarioSnapshot(
+  counts: InventarioCounts,
+  dims: InventarioDims,
+  config: InventarioConfig,
+): InventarioActualInput {
+  return {
+    counts: { ...counts },
+    dims: INVENTARIO_TIPOS.reduce(
+      (acc, t) => {
+        acc[t] = { ...dims[t] };
+        return acc;
+      },
+      {} as Record<InventarioTipoId, BultoDims>,
+    ),
+    config: INVENTARIO_TIPOS.reduce(
+      (acc, t) => {
+        acc[t] = { ...config[t] };
+        return acc;
+      },
+      {} as Record<InventarioTipoId, InventarioItemConfig>,
+    ),
+  };
 }

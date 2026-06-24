@@ -190,7 +190,7 @@ export function CubicajeInventoryCard({
           <input
             type="number"
             min={0}
-            max={999}
+            max={9999}
             value={count}
             onChange={(e) => onChange(Math.max(0, parseInt(e.target.value, 10) || 0))}
           />
@@ -237,7 +237,7 @@ export function CubicajeInventoryCard({
           <input
             type="number"
             min={0}
-            max={999}
+            max={9999}
             value={count}
             onChange={(e) => onChange(Math.max(0, parseInt(e.target.value, 10) || 0))}
           />

@@ -79,11 +79,14 @@ export function enrichItemsFromUserText(
   const liters = litersMatch ? parseInt(litersMatch[1], 10) : null;
   const drumSpec = liters != null ? DRUM_LITERS[liters] ?? DRUM_LITERS[200] : null;
 
-  const qtyMatch = text.match(/(\d+)\s*(?:tambos?|bidones?|barriles?|tarimas?|pallets?|cajas?)/);
+  const qtyMatch = text.match(/(\d+)\s*(?:tambos?|bidones?|barriles?|tarimas?|pallets?|cajas?|bolsas?|sacos?)/);
   const pesoUnitMatch =
-    text.match(/(?:cada uno|por (?:uno|unidad|tambo|tarima|caja)|\/u)\D*(\d+)\s*kg/) ||
+    text.match(/(?:cada uno|por (?:uno|unidad|tambo|tarima|caja|bolsa|saco)|\/u)\D*(\d+)\s*kg/) ||
     text.match(/(\d+)\s*kg\s*(?:cada|por|\/)/);
-  const pesoTotalMatch = text.match(/peso total(?:\s+de)?\s+(\d+)/);
+  const pesoTotalMatch = text.match(/(?:peso total(?:\s+de)?|total(?:\s+de)?)\s+(\d+)/);
+  const tonMatch = text.match(/(\d+(?:[.,]\d+)?)\s*toneladas?/);
+  const apilar = /apilar|una arriba|encima|en capas|apilad/.test(text);
+  const isBolsa = /bolsas?|sacos?|hielo/.test(text);
 
   return items.map((raw) => {
     let item = normalizeItemDims(raw);
@@ -110,12 +113,28 @@ export function enrichItemsFromUserText(
       item.largo = dims[0];
       item.ancho = dims[1];
       item.alto = dims[2];
+    } else if (isBolsa && item.tipo === 'pequena') {
+      item.largo = 0.35;
+      item.ancho = 0.25;
+      item.alto = apilar ? 0.08 : 0.15;
     }
 
     if (pesoUnitMatch) {
       item.pesoKg = parseInt(pesoUnitMatch[1], 10);
     } else if (pesoTotalMatch && item.cantidad > 0) {
       item.pesoKg = Math.round(parseInt(pesoTotalMatch[1], 10) / item.cantidad);
+    }
+
+    if (tonMatch) {
+      const tons = parseFloat(tonMatch[1].replace(',', '.'));
+      const totalKg = Math.round(tons * 1000);
+      if (item.pesoKg != null && item.pesoKg > 0) {
+        item.cantidad = Math.max(item.cantidad, Math.round(totalKg / item.pesoKg));
+      } else if (pesoUnitMatch) {
+        const unitKg = parseInt(pesoUnitMatch[1], 10);
+        item.pesoKg = unitKg;
+        item.cantidad = Math.max(item.cantidad, Math.round(totalKg / unitKg));
+      }
     }
 
     if (qtyMatch && items.length === 1) {

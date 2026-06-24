@@ -17,6 +17,13 @@ export class CubicajeController {
     return this.cubicaje.calcular(input);
   }
 
+  @Post('recomendar-modelo')
+  recomendarModelo(@Body() body: { bultos: CubicajeInput['bultos'] }) {
+    const fit = this.cubicaje.findSmallestFittingModelo(body.bultos || []);
+    if (!fit) return { modelo: null };
+    return fit;
+  }
+
   @Post('asistente')
   asistenteCarga(@Body() body: CubicajeAsistenteInput) {
     return this.asistente.parseCarga(body);

@@ -29,11 +29,21 @@ export interface CubicajeAsistenteItem {
   etiqueta?: string;
 }
 
+export interface InventarioActualInput {
+  counts: Partial<Record<CubicajeAsistenteTipo, number>>;
+  dims?: Partial<
+    Record<CubicajeAsistenteTipo, { largo?: number; ancho?: number; alto?: number }>
+  >;
+  config?: Partial<Record<CubicajeAsistenteTipo, { pesoKg?: number; etiqueta?: string }>>;
+}
+
 export interface CubicajeAsistenteInput {
   messages: CubicajeChatMessage[];
   modeloActual?: string;
   modelosDisponibles?: string[];
   clientContext?: string;
+  /** Inventario ya configurado en la UI (para preguntas de seguimiento tipo «¿qué camión?»). */
+  inventarioActual?: InventarioActualInput;
 }
 
 export interface CubicajeAsistenteResponse {
@@ -68,12 +78,17 @@ const ITEM_PRESETS = STANDARD_SPECS;
 
 const PRESETS = `
 Tipos de mercancía (campo "tipo"):
-- pequena: caja pequeña (default 0.3×0.2×0.15 m, 15 kg)
+- pequena: caja pequeña o bolsa/saco (default 0.3×0.2×0.15 m, 15 kg)
 - mediana: caja mediana (default 0.5×0.4×0.3 m, 35 kg)
 - grande: caja grande (default 0.75×0.5×0.6 m, 80 kg)
 - tarima: tarima/pallet (default 1.2×1×1.5 m, 700 kg)
 - tambo: tambo/cilindro industrial 200 L → largo=ancho=0.585 m, alto=0.88 m, 200 kg
 - tambo 100 L → Ø0.49 m, alto 0.88 m | tambo 50 L → Ø0.39 m, alto 0.75 m
+
+Bolsas / sacos / hielo apilable:
+- Usa tipo "pequena" con medidas propias (ej. bolsa 5 kg hielo: 0.35×0.25×0.08 m, pesoKg=5).
+- Si dice apilar / una arriba de otra: alto pequeño (0.05–0.12 m), el sistema apila en capas.
+- Si dice N toneladas con bolsas de X kg: cantidad = (N×1000)/X.
 
 Medidas SIEMPRE en METROS en el JSON (0.585, no 585 ni 58.5).
 Peso en kg por UNIDAD (no peso total).
@@ -81,6 +96,7 @@ Si el usuario da cm: 58.5 cm → 0.585 m; 120 cm → 1.2 m.
 Si dice "200 litros" o "tambo estándar": largo=0.585, ancho=0.585, alto=0.88.
 Si dice "220 kg cada uno" o "220 kg por tambo": pesoKg=220.
 Si dice peso total de N kg con X unidades: pesoKg = N/X.
+Si solo pregunta qué camión conviene sin cambiar mercancía: aplicar=true con los mismos items del contexto.
 `.trim();
 
 @Injectable()
@@ -180,9 +196,17 @@ Reglas:
     }
 
     const lastUser = [...trimmed].reverse().find((m) => m.role === 'user')?.content ?? '';
+    const truckQuestion = this.isTruckQuestion(lastUser);
     let items = this.sanitizeItems(parsed.items);
     items = enrichItemsFromUserText(items, lastUser);
-    const aplicar = Boolean(parsed.aplicar) && items.some((i) => i.cantidad > 0);
+
+    const uiItems = input.inventarioActual ? this.itemsFromInventario(input.inventarioActual) : [];
+    if (uiItems.length && (truckQuestion || !items.length)) {
+      items = uiItems;
+    }
+
+    let aplicar =
+      (Boolean(parsed.aplicar) || truckQuestion) && items.some((i) => i.cantidad > 0);
 
     let modelo: string | undefined;
     let utilizacionPct: number | undefined;
@@ -191,7 +215,9 @@ Reglas:
       typeof parsed.reply === 'string' && parsed.reply.trim()
         ? parsed.reply.trim().slice(0, 2000)
         : aplicar
-          ? 'Listo, configuré la carga según tu descripción.'
+          ? truckQuestion
+            ? 'Revisé la carga configurada y elijo el camión más adecuado.'
+            : 'Listo, configuré la carga según tu descripción.'
           : 'Cuéntame qué mercancía, cantidades, medidas y peso quieres cargar.';
 
     if (aplicar) {
@@ -210,12 +236,44 @@ Reglas:
     return {
       reply,
       aplicar,
-      autoCalcular: aplicar && parsed.autoCalcular !== false,
+      autoCalcular: aplicar && (truckQuestion || parsed.autoCalcular !== false),
       modelo,
       utilizacionPct,
       pesoTotalKg,
       items: aplicar ? items : [],
     };
+  }
+
+  private isTruckQuestion(text: string): boolean {
+    const t = text.toLowerCase();
+    const asksTruck =
+      /cam[ií]on|unidad|veh[ií]culo|elf|frr|npr|flota/.test(t) &&
+      /(qu[eé]|cu[aá]l|necesito|conviene|adecuado|recomi|mejor|m[aá]s peque|ocupo|requiero|sirve)/.test(
+        t,
+      );
+    const onlyTruck =
+      /^(?:y\s+)?(?:qu[eé]|cu[aá]l)\s+cam[ií]on/.test(t.trim()) ||
+      /cam[ií]on\s+(?:necesito|me conviene|requiero)/.test(t);
+    return asksTruck || onlyTruck;
+  }
+
+  private itemsFromInventario(input: InventarioActualInput): CubicajeAsistenteItem[] {
+    const out: CubicajeAsistenteItem[] = [];
+    const tipos: CubicajeAsistenteTipo[] = ['pequena', 'mediana', 'grande', 'tarima', 'tambo'];
+    for (const tipo of tipos) {
+      const cantidad = this.clampInt(input.counts?.[tipo], 0, 15000);
+      if (cantidad == null || cantidad <= 0) continue;
+      const item: CubicajeAsistenteItem = { tipo, cantidad };
+      const d = input.dims?.[tipo];
+      if (d?.largo != null) item.largo = d.largo;
+      if (d?.ancho != null) item.ancho = d.ancho;
+      if (d?.alto != null) item.alto = d.alto;
+      const c = input.config?.[tipo];
+      if (c?.pesoKg != null) item.pesoKg = c.pesoKg;
+      if (c?.etiqueta != null) item.etiqueta = c.etiqueta;
+      out.push(normalizeItemDims(item));
+    }
+    return out;
   }
 
   private buildReplyWithTruck(
@@ -263,7 +321,7 @@ Reglas:
       const r = row as Record<string, unknown>;
       const tipo = String(r.tipo || '').trim() as CubicajeAsistenteTipo;
       if (!TIPOS_VALIDOS.has(tipo)) continue;
-      const cantidad = this.clampInt(r.cantidad, 0, 999);
+      const cantidad = this.clampInt(r.cantidad, 0, 15000);
       if (cantidad == null || cantidad <= 0) continue;
       const preset = ITEM_PRESETS[tipo];
       const item: CubicajeAsistenteItem = { tipo, cantidad };

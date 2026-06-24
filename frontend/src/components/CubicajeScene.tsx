@@ -144,6 +144,13 @@ function SceneContent(props: CubicajeSceneProps) {
     viewResetKey = 0,
   } = props;
 
+  const MAX_VISIBLE = 800;
+  const visibleBultos = useMemo(() => {
+    if (bultos.length <= MAX_VISIBLE) return bultos;
+    const step = Math.ceil(bultos.length / MAX_VISIBLE);
+    return bultos.filter((_, i) => i % step === 0);
+  }, [bultos]);
+
   return (
     <>
       <color attach="background" args={['#eef2f7']} />
@@ -155,7 +162,7 @@ function SceneContent(props: CubicajeSceneProps) {
       <CameraRig preset={preset} contenedor={contenedor} zoomFactor={zoomFactor} viewResetKey={viewResetKey} />
       <IsuzuTruckVisual {...contenedor} />
       <CargoDimensionGuides largo={contenedor.largo} ancho={contenedor.ancho} alto={contenedor.alto} />
-      {bultos.map((b) => (
+      {visibleBultos.map((b) => (
         <CargoBulto
           key={b.id}
           bulto={b}
@@ -163,7 +170,7 @@ function SceneContent(props: CubicajeSceneProps) {
           tipo={b.tipo}
           dimmed={filaFilter != null && b.fila !== filaFilter}
           highlighted={highlightedId === b.id}
-          showLabel={showLabels}
+          showLabel={showLabels && bultos.length <= 120}
         />
       ))}
     </>

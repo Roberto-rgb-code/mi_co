@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AssistantMarkdown } from './AssistantMarkdown';
-import type { CubicajeAsistenteResponse } from '../types/cubicaje';
+import type { CubicajeAsistenteResponse, InventarioActualInput } from '../types/cubicaje';
 
 type Role = 'user' | 'assistant';
 
@@ -15,13 +15,14 @@ interface Props {
   modeloActual: string;
   modelosDisponibles: string[];
   clientContext?: string;
+  inventarioActual?: InventarioActualInput;
   onApply: (result: CubicajeAsistenteResponse) => void | Promise<void>;
 }
 
 const WELCOME: Msg = {
   role: 'assistant',
   content:
-    'Describe la mercancía en lenguaje natural. Configuro cantidades, medidas, peso y etiquetas, elijo el **camión más pequeño** del catálogo que quepa y simulo la carga.\n\n**Ejemplo:** «6 tambos de 200 litros, 220 kg c/u, aceite — ¿qué camión me conviene?»',
+    'Describe la mercancía en lenguaje natural. Configuro cantidades, medidas, peso y etiquetas, elijo el **camión más pequeño** del catálogo que quepa y simulo la carga en 3D (igual que pulsar **Cargar**).\n\n**Ejemplo:** «1400 bolsas de hielo de 5 kg apiladas, 7 toneladas — ¿qué camión necesito?»',
 };
 
 export function CubicajeAssistantPanel({
@@ -30,11 +31,13 @@ export function CubicajeAssistantPanel({
   modeloActual,
   modelosDisponibles,
   clientContext,
+  inventarioActual,
   onApply,
 }: Props) {
   const [messages, setMessages] = useState<Msg[]>([WELCOME]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +56,7 @@ export function CubicajeAssistantPanel({
 
   async function send() {
     const text = input.trim();
-    if (!text || loading) return;
+    if (!text || loading || applying) return;
     setError(null);
     const userMsg: Msg = { role: 'user', content: text };
     const next = [...messages, userMsg];
@@ -69,6 +72,7 @@ export function CubicajeAssistantPanel({
           modeloActual,
           modelosDisponibles,
           clientContext,
+          inventarioActual,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as CubicajeAsistenteResponse & {
@@ -84,7 +88,14 @@ export function CubicajeAssistantPanel({
       if (!data.reply) throw new Error('Respuesta vacía.');
       setMessages([...next, { role: 'assistant', content: data.reply }]);
       if (data.aplicar && data.items?.length) {
-        await onApply(data);
+        setApplying(true);
+        try {
+          await onApply(data);
+        } catch (e) {
+          setError(e instanceof Error ? e.message : 'Error al aplicar la carga');
+        } finally {
+          setApplying(false);
+        }
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error de red');
@@ -140,6 +151,12 @@ export function CubicajeAssistantPanel({
               </span>
             </div>
           )}
+          {applying && (
+            <div className="cubicaje-ai-bubble cubicaje-ai-bubble--assistant cubicaje-ai-typing">
+              <span className="cubicaje-ai-bubble-label">Sistema</span>
+              <span>Aplicando inventario, eligiendo camión y simulando carga…</span>
+            </div>
+          )}
           <div ref={bottomRef} />
         </div>
 
@@ -162,11 +179,11 @@ export function CubicajeAssistantPanel({
                 void send();
               }
             }}
-            disabled={loading}
+            disabled={loading || applying}
             aria-label="Describe la mercancía"
           />
-          <button type="submit" className="cubicaje-ai-send" disabled={loading || !input.trim()}>
-            {loading ? '…' : 'Enviar'}
+          <button type="submit" className="cubicaje-ai-send" disabled={loading || applying || !input.trim()}>
+            {loading ? '…' : applying ? 'Cargando…' : 'Enviar'}
           </button>
         </form>
       </aside>
