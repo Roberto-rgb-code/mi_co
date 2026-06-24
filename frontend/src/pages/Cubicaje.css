@@ -82,6 +82,12 @@
   opacity: 0.85;
 }
 
+.cubicaje-dims-chip--ext {
+  font-size: 0.68rem;
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
 .cubicaje-toolbar-stats {
   display: flex;
   gap: 0.45rem;

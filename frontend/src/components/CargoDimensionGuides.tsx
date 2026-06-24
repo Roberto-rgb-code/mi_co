@@ -62,13 +62,13 @@ export function CargoDimensionGuides({
       </mesh>
 
       <Html position={[cx, 0.04, -0.22]} center style={{ pointerEvents: 'none' }} zIndexRange={[50, 0]}>
-        <span className="cubicaje-dim-tag">L {fmtM(largo)}</span>
+        <span className="cubicaje-dim-tag">Largo interior {fmtM(largo)}</span>
       </Html>
       <Html position={[-0.22, cy, cz]} center style={{ pointerEvents: 'none' }} zIndexRange={[50, 0]}>
-        <span className="cubicaje-dim-tag">H {fmtM(alto)}</span>
+        <span className="cubicaje-dim-tag">Alto interior {fmtM(alto)}</span>
       </Html>
       <Html position={[cx, cy, ancho + 0.22]} center style={{ pointerEvents: 'none' }} zIndexRange={[50, 0]}>
-        <span className="cubicaje-dim-tag">A {fmtM(ancho)}</span>
+        <span className="cubicaje-dim-tag">Ancho interior {fmtM(ancho)}</span>
       </Html>
     </group>
   );

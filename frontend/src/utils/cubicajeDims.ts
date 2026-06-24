@@ -24,6 +24,15 @@ export function resolveContenedorExterior(mod?: ModeloCatalogLike): DimsM {
   };
 }
 
+export function formatDimsLine(d: DimsM, tipo: 'interior' | 'exterior'): string {
+  const suf = tipo === 'interior' ? 'interior' : 'exterior';
+  return (
+    `Largo ${suf} ${(d.largo * 100).toFixed(0)} cm · ` +
+    `Ancho ${suf} ${(d.ancho * 100).toFixed(0)} cm · ` +
+    `Alto ${suf} ${(d.alto * 100).toFixed(0)} cm`
+  );
+}
+
 export function resolveContenedorInterior(mod?: ModeloCatalogLike): DimsM {
   const ext = resolveContenedorExterior(mod);
   const derived: DimsM = {

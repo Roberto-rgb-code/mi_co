@@ -22,7 +22,7 @@ import {
   inventarioToBultos,
 } from '../types/cubicaje';
 import { calcMetrosVacios, calcVolumenUsado } from '../utils/cubicajeAxleWeight';
-import { resolveContenedorInterior } from '../utils/cubicajeDims';
+import { resolveContenedorInterior, formatDimsLine } from '../utils/cubicajeDims';
 import './Cubicaje.css';
 
 interface ModeloOption {
@@ -175,6 +175,18 @@ export function Cubicaje() {
 
   const displayContenedor = result?.contenedor ?? previewContenedor;
 
+  const displayContenedorExterior = useMemo(() => {
+    if (result?.contenedorExterior) return result.contenedorExterior;
+    if (selectedModelo) {
+      return {
+        largo: selectedModelo.largoExt,
+        ancho: selectedModelo.anchoExt,
+        alto: selectedModelo.altoExt,
+      };
+    }
+    return null;
+  }, [result?.contenedorExterior, selectedModelo]);
+
   const totalBultos =
     inventario.pequena + inventario.mediana + inventario.grande + inventario.tarima + inventario.tambo;
 
@@ -321,16 +333,14 @@ export function Cubicaje() {
           {selectedModelo && displayContenedor && (
             <>
               <strong className="cubicaje-model-name">{result?.modelo ?? modelo}</strong>
-              <span className="cubicaje-dims-chip" title="Caja útil interior (exterior en tooltip del modelo)">
-                {(displayContenedor.largo * 100).toFixed(0)}×{(displayContenedor.ancho * 100).toFixed(0)}×
-                {(displayContenedor.alto * 100).toFixed(0)} cm útil
-              </span>
-              {result?.contenedorExterior && (
-                <span className="cubicaje-dims-chip cubicaje-dims-chip--muted">
-                  ext{' '}
-                  {(result.contenedorExterior.largo * 100).toFixed(0)}×
-                  {(result.contenedorExterior.ancho * 100).toFixed(0)}×
-                  {(result.contenedorExterior.alto * 100).toFixed(0)} cm
+              {displayContenedorExterior && (
+                <span className="cubicaje-dims-chip cubicaje-dims-chip--ext" title="Carrocería (cotización 2026)">
+                  {formatDimsLine(displayContenedorExterior, 'exterior')}
+                </span>
+              )}
+              {displayContenedor && (
+                <span className="cubicaje-dims-chip" title="Caja útil para cubicaje">
+                  {formatDimsLine(displayContenedor, 'interior')}
                 </span>
               )}
             </>
@@ -484,7 +494,10 @@ export function Cubicaje() {
                   <span className="cubicaje-fleet-info">
                     <strong>{m.label}</strong>
                     <small>
-                      {m.largo.toFixed(1)}×{m.ancho.toFixed(1)}×{m.alto.toFixed(1)} m
+                      {formatDimsLine(
+                        { largo: m.largoExt, ancho: m.anchoExt, alto: m.altoExt },
+                        'exterior',
+                      )}
                     </small>
                   </span>
                 </button>
@@ -523,11 +536,17 @@ export function Cubicaje() {
                 )}
                 {displayContenedor && (
                   <div className="cubicaje-canvas-legend" aria-label="Leyenda de medidas">
-                    <p className="cubicaje-legend-title">Espacio de carga (1 m = 1 unidad)</p>
-                    <p className="cubicaje-legend-dims">
-                      L {displayContenedor.largo.toFixed(2)} m · A {displayContenedor.ancho.toFixed(2)} m · H{' '}
-                      {displayContenedor.alto.toFixed(2)} m
-                    </p>
+                    <p className="cubicaje-legend-title">Espacio de carga interior (1 m = 1 unidad)</p>
+                    {displayContenedorExterior && (
+                      <p className="cubicaje-legend-dims cubicaje-legend-dims--ext">
+                        {formatDimsLine(displayContenedorExterior, 'exterior')}
+                      </p>
+                    )}
+                    {displayContenedor && (
+                      <p className="cubicaje-legend-dims">
+                        {formatDimsLine(displayContenedor, 'interior')}
+                      </p>
+                    )}
                     <ul className="cubicaje-legend-colors">
                       {INVENTARIO_TIPOS.map((t) =>
                         inventario[t] > 0 ? (
@@ -626,8 +645,7 @@ export function Cubicaje() {
           {!result && displayContenedor && (
             <p className="cubicaje-sidebar-hint">
               Ajusta medidas y cantidades, luego pulsa <strong>Cargar</strong> para simular la colocación
-              dentro de la caja {displayContenedor.largo.toFixed(1)}×{displayContenedor.ancho.toFixed(1)}×
-              {displayContenedor.alto.toFixed(1)} m.
+              en la caja interior ({formatDimsLine(displayContenedor, 'interior').toLowerCase()}).
             </p>
           )}
         </aside>
