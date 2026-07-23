@@ -39,3 +39,6 @@ coverage/
 Distribucion_carga/_pages/
 Distribucion_carga/_extracted.txt
 Distribucion_carga/_excel_dump.txt
+
+# Documentos personales / identidad (no subir)
+INE*.pdf
