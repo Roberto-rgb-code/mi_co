@@ -13,6 +13,7 @@ import { ClienteNuevo } from './pages/ClienteNuevo';
 import { Comparativa } from './pages/Comparativa';
 
 const Cubicaje = lazy(() => import('./pages/Cubicaje').then((m) => ({ default: m.Cubicaje })));
+const PdfEditor = lazy(() => import('./pages/PdfEditor').then((m) => ({ default: m.PdfEditor })));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -55,6 +56,21 @@ function AppRoutes() {
         <Route path="/crm" element={<CRM />} />
         <Route path="/crm/nuevo" element={<ClienteNuevo />} />
         <Route path="/crm/:id" element={<ClienteDetalle />} />
+        <Route
+          path="/pdf"
+          element={
+            <Suspense
+              fallback={
+                <div className="loading" style={{ padding: '4rem' }}>
+                  <div className="spinner" />
+                  <p>Cargando editor PDF…</p>
+                </div>
+              }
+            >
+              <PdfEditor />
+            </Suspense>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

@@ -94,7 +94,7 @@ export function Cotizador() {
     selected?.motor?.split('/')[0]?.trim() || selected?.motor?.slice(0, 48) || '—';
 
   return (
-    <div className="page cotizador">
+    <div className="page cotizador" data-tour="cotizador-root">
       <div className="cotizador-header">
         <div>
           <h1>Cotizador</h1>
@@ -168,7 +168,7 @@ export function Cotizador() {
 
       {!loading && !error && filtered.length > 0 && (
         <div className="cotizador-layout">
-          <div className="cotizador-grid-wrap">
+          <div className="cotizador-grid-wrap" data-tour="cotizador-lista">
             <div className="modelos-grid modelos-grid--cotizador">
               {filtered.map((m) => (
                 <ModeloCard

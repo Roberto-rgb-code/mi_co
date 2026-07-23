@@ -33,11 +33,11 @@ export function CRM() {
   }, []);
 
   return (
-    <div className="page crm">
+    <div className="page crm" data-tour="crm-root">
       <div className="crm-header">
         <h1>CRM — Clientes</h1>
         <p className="crm-sub">Gestiona clientes, captura necesidades y obtén recomendaciones con el asistente.</p>
-        <Link to="/crm/nuevo" className="btn-primary">
+        <Link to="/crm/nuevo" className="btn-primary" data-tour="crm-nuevo">
           + Nuevo cliente
         </Link>
       </div>

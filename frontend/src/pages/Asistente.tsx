@@ -64,7 +64,7 @@ export function Asistente() {
   }
 
   return (
-    <div className="page asistente">
+    <div className="page asistente" data-tour="asistente-root">
       <div className="asistente-header">
         <div>
           <h1>Asistente</h1>
@@ -87,7 +87,7 @@ export function Asistente() {
         </div>
       )}
 
-      <div className="asistente-chat" aria-live="polite">
+      <div className="asistente-chat" aria-live="polite" data-tour="asistente-chat">
         {messages.map((m, i) => (
           <div key={i} className={`asistente-bubble asistente-bubble--${m.role}`}>
             <span className="asistente-bubble-label">{m.role === 'user' ? 'Tú' : 'Asistente'}</span>

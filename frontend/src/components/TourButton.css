@@ -1,0 +1,67 @@
+.tour-fab {
+  position: fixed;
+  right: 1.15rem;
+  bottom: 1.15rem;
+  z-index: 40;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(200, 16, 46, 0.35);
+  transition: transform 0.15s, background 0.15s;
+}
+
+.tour-fab:hover {
+  background: var(--primary-dark);
+  transform: scale(1.06);
+}
+
+.tour-fab:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+/* Driver.js — alinear con marca ISUZU */
+.driver-popover.driverjs-theme,
+.driver-popover {
+  background: #fff;
+  color: var(--text);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+}
+
+.driver-popover-title {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.driver-popover-description {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.driver-popover-next-btn,
+.driver-popover-done-btn {
+  background: var(--primary) !important;
+  color: #fff !important;
+  border: none !important;
+  text-shadow: none !important;
+  border-radius: 8px !important;
+}
+
+.driver-popover-prev-btn {
+  background: var(--bg) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  text-shadow: none !important;
+  border-radius: 8px !important;
+}
+
+.driver-popover-close-btn {
+  color: var(--text-muted);
+}

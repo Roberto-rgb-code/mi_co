@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
+import { TourButton } from './TourButton';
 import './Layout.css';
 
 export function Layout() {
@@ -9,6 +10,7 @@ export function Layout() {
       <main className="layout-main">
         <Outlet />
       </main>
+      <TourButton />
     </div>
   );
 }

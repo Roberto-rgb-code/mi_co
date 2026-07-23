@@ -61,7 +61,7 @@ export function Comparativa() {
   const columnas = data?.modelosIsuzu.map((m) => m.catalogo) ?? [];
 
   return (
-    <div className="page comparativa">
+    <div className="page comparativa" data-tour="comparativa-root">
       <div className="comparativa-header">
         <h1>Comparativa</h1>
         <p className="comparativa-sub">
@@ -71,7 +71,7 @@ export function Comparativa() {
         </p>
       </div>
 
-      <div className="comparativa-form">
+      <div className="comparativa-form" data-tour="comparativa-form">
         <label htmlFor="comp-input" className="sr-only">
           Camión de la competencia
         </label>

@@ -50,7 +50,7 @@ export function Catalogo() {
   const goToPage = (p: number) => setPage(Math.max(1, Math.min(p, totalPages)));
 
   return (
-    <div className="page catalogo">
+    <div className="page catalogo" data-tour="catalogo-root">
       <div className="page-header">
         <h1>Catálogo</h1>
         <p>Todos los modelos Isuzu con especificaciones completas</p>
@@ -85,7 +85,7 @@ export function Catalogo() {
           <p>No hay modelos que coincidan con tu búsqueda.</p>
         </div>
       ) : (
-        <div className="catalogo-grid">
+        <div className="catalogo-grid" data-tour="catalogo-grid">
           {paginated.map(m => (
             <ModeloCard key={m.modelo} modelo={m} onClick={() => setSelected(m)} />
           ))}

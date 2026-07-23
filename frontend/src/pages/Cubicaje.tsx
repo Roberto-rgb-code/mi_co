@@ -369,7 +369,7 @@ export function Cubicaje() {
   }, [selectedCliente]);
 
   return (
-    <div className="page cubicaje cubicaje-app">
+    <div className="page cubicaje cubicaje-app" data-tour="cubicaje-root">
       <header className="cubicaje-toolbar">
         <div className="cubicaje-toolbar-left">
           <span className="cubicaje-brand-logo">Cubicaje ISUZU</span>
@@ -467,6 +467,7 @@ export function Cubicaje() {
           <button
             type="button"
             className="cubicaje-ai-btn"
+            data-tour="cubicaje-ai"
             onClick={() => setAssistantOpen(true)}
             title="Describir mercancía con IA"
           >
@@ -475,6 +476,7 @@ export function Cubicaje() {
           <button
             type="button"
             className="btn-primary cubicaje-cargar-btn"
+            data-tour="cubicaje-cargar"
             onClick={() => void handleCalcular()}
             disabled={loading || !modelo || totalBultos < 1}
           >
@@ -511,7 +513,7 @@ export function Cubicaje() {
       )}
 
       <div className="cubicaje-main">
-        <aside className="cubicaje-fleet">
+        <aside className="cubicaje-fleet" data-tour="cubicaje-fleet">
           <h2 className="cubicaje-sidebar-title">Flota</h2>
           <input
             type="search"

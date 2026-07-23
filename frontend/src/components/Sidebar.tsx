@@ -8,7 +8,7 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <aside className={`sidebar ${collapsed ? 'sidebar--collapsed' : ''}`}>
+    <aside className={`sidebar ${collapsed ? 'sidebar--collapsed' : ''}`} data-tour="sidebar">
       <div className="sidebar-header">
         <div className="sidebar-brand">
           <span className="sidebar-logo">ISUZU</span>
@@ -61,6 +61,10 @@ export function Sidebar() {
         <NavLink to="/crm" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} title="CRM">
           <span className="nav-icon">👥</span>
           <span className="nav-text">CRM</span>
+        </NavLink>
+        <NavLink to="/pdf" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} title="Editor PDF">
+          <span className="nav-icon">📄</span>
+          <span className="nav-text">Editor PDF</span>
         </NavLink>
       </nav>
 

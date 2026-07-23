@@ -11,7 +11,7 @@ export function Inicio() {
         <h1>Bienvenido{author(user?.name)}</h1>
         <p>Sistema de cotización para camiones Isuzu ELF y Forward</p>
       </section>
-      <div className="quick-actions">
+      <div className="quick-actions" data-tour="inicio-actions">
         <Link to="/cotizador" className="action-card">
           <span className="action-icon">📋</span>
           <h3>Cotizador</h3>
@@ -31,6 +31,11 @@ export function Inicio() {
           <span className="action-icon">⚖️</span>
           <h3>Comparativa</h3>
           <p>Compara un camión de la competencia con modelos ISUZU del catálogo</p>
+        </Link>
+        <Link to="/pdf" className="action-card">
+          <span className="action-icon">📄</span>
+          <h3>Editor PDF</h3>
+          <p>Amplía INE u otros documentos y descarga el PDF editado</p>
         </Link>
       </div>
     </div>
