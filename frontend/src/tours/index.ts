@@ -87,8 +87,8 @@ export const TOURS: Record<TourId, { title: string; steps: DriveStep[] }> = {
     title: 'Editor PDF',
     steps: [
       step('[data-tour="pdf-upload"], [data-tour="pdf-preview"]', 'Documento', 'Sube un PDF (por ejemplo una INE escaneada).'),
-      step('[data-tour="pdf-tools"]', 'Herramientas', 'Rota, recorta la zona de la INE y amplía al exportar.'),
-      step('[data-tour="pdf-download"], [data-tour="pdf-header"]', 'Descargar', 'Cuando termines, descarga el PDF editado.'),
+      step('[data-tour="pdf-enlarge"], [data-tour="pdf-tools"]', 'Ampliar INE', 'Detecta la tarjeta en el escaneo y la agranda en la hoja (no es solo zoom).'),
+      step('[data-tour="pdf-download"], [data-tour="pdf-header"]', 'Descargar', 'Cuando veas el Resultado, descarga el PDF editado.'),
     ],
   },
 };

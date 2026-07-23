@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import * as pdfjs from 'pdfjs-dist';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
 import './PdfEditor.css';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -13,15 +13,180 @@ type CropRect = { x: number; y: number; w: number; h: number };
 
 type PageEdit = {
   rotation: 0 | 90 | 180 | 270;
-  /** Factor de ampliación al exportar (1 = original). */
-  enlarge: number;
+  /** Recorte normalizado 0–1 sobre la página rotada. */
   crop: CropRect | null;
+  /** Si true, la INE recortada se coloca grande centrada en hoja carta. */
+  fillPage: boolean;
 };
 
-const DEFAULT_EDIT: PageEdit = { rotation: 0, enlarge: 1, crop: null };
+const DEFAULT_EDIT: PageEdit = { rotation: 0, crop: null, fillPage: false };
+
+/** Hoja carta en puntos PDF (72 dpi). */
+const LETTER_W = 612;
+const LETTER_H = 792;
+/** Tope de píxeles por lado al exportar (evita congelar el navegador). */
+const MAX_EXPORT_PX = 1600;
+const DETECT_SCALE = 1.25;
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
+}
+
+function yieldUi() {
+  return new Promise<void>((r) => setTimeout(r, 0));
+}
+
+/** Detecta el rectángulo del contenido (INE) vs fondo blanco/gris claro. */
+function detectContentCrop(canvas: HTMLCanvasElement): CropRect | null {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return null;
+  const { width: W, height: H } = canvas;
+  if (W < 8 || H < 8) return null;
+
+  const data = ctx.getImageData(0, 0, W, H).data;
+  const threshold = 245; // casi blanco
+  let minX = W;
+  let minY = H;
+  let maxX = 0;
+  let maxY = 0;
+  let hits = 0;
+
+  // Muestreo cada 2 px para ir rápido
+  for (let y = 0; y < H; y += 2) {
+    for (let x = 0; x < W; x += 2) {
+      const i = (y * W + x) * 4;
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      if (r < threshold || g < threshold || b < threshold) {
+        hits++;
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  if (hits < 80) return null;
+
+  // Padding ~2%
+  const padX = Math.max(4, Math.round(W * 0.02));
+  const padY = Math.max(4, Math.round(H * 0.02));
+  minX = Math.max(0, minX - padX);
+  minY = Math.max(0, minY - padY);
+  maxX = Math.min(W - 1, maxX + padX);
+  maxY = Math.min(H - 1, maxY + padY);
+
+  const w = (maxX - minX) / W;
+  const h = (maxY - minY) / H;
+  // Si casi es toda la página, no hay mucho que recortar
+  if (w > 0.96 && h > 0.96) return null;
+  if (w < 0.05 || h < 0.05) return null;
+
+  return {
+    x: minX / W,
+    y: minY / H,
+    w,
+    h,
+  };
+}
+
+async function renderPageToCanvas(
+  page: PDFPageProxy,
+  rotation: number,
+  scale: number,
+): Promise<HTMLCanvasElement> {
+  const viewport = page.getViewport({ scale, rotation });
+  let w = Math.floor(viewport.width);
+  let h = Math.floor(viewport.height);
+  const maxSide = Math.max(w, h);
+  let usedScale = scale;
+  if (maxSide > MAX_EXPORT_PX) {
+    usedScale = scale * (MAX_EXPORT_PX / maxSide);
+    const vp2 = page.getViewport({ scale: usedScale, rotation });
+    w = Math.floor(vp2.width);
+    h = Math.floor(vp2.height);
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d')!;
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, w, h);
+  const vp = page.getViewport({ scale: usedScale, rotation });
+  await page.render({ canvasContext: ctx, viewport: vp, canvas }).promise;
+  return canvas;
+}
+
+/** Compone la página final: INE grande en hoja blanca (o página completa). */
+function composeOutputCanvas(
+  source: HTMLCanvasElement,
+  edit: PageEdit,
+): HTMLCanvasElement {
+  const crop = edit.crop;
+  let sx = 0;
+  let sy = 0;
+  let sw = source.width;
+  let sh = source.height;
+
+  if (crop && crop.w > 0.01 && crop.h > 0.01) {
+    sx = Math.floor(crop.x * source.width);
+    sy = Math.floor(crop.y * source.height);
+    sw = Math.max(1, Math.floor(crop.w * source.width));
+    sh = Math.max(1, Math.floor(crop.h * source.height));
+  }
+
+  if (edit.fillPage || crop) {
+    // Hoja carta a buena resolución (cap)
+    const dpi = 150;
+    const pageW = Math.min(MAX_EXPORT_PX, Math.round((LETTER_W / 72) * dpi));
+    const pageH = Math.min(MAX_EXPORT_PX, Math.round((LETTER_H / 72) * dpi));
+    const out = document.createElement('canvas');
+    out.width = pageW;
+    out.height = pageH;
+    const ctx = out.getContext('2d')!;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, pageW, pageH);
+
+    const margin = 0.04;
+    const boxW = pageW * (1 - 2 * margin);
+    const boxH = pageH * (1 - 2 * margin);
+    const scale = Math.min(boxW / sw, boxH / sh);
+    const dw = sw * scale;
+    const dh = sh * scale;
+    const dx = (pageW - dw) / 2;
+    const dy = (pageH - dh) / 2;
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(source, sx, sy, sw, sh, dx, dy, dw, dh);
+    return out;
+  }
+
+  // Sin recorte ni fill: página completa, limitada
+  const out = document.createElement('canvas');
+  out.width = source.width;
+  out.height = source.height;
+  const ctx = out.getContext('2d')!;
+  ctx.drawImage(source, 0, 0);
+  return out;
+}
+
+function canvasToJpegBytes(canvas: HTMLCanvasElement, quality = 0.88): Promise<Uint8Array> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      async (blob) => {
+        if (!blob) {
+          reject(new Error('No se pudo generar la imagen'));
+          return;
+        }
+        resolve(new Uint8Array(await blob.arrayBuffer()));
+      },
+      'image/jpeg',
+      quality,
+    );
+  });
 }
 
 export function PdfEditor() {
@@ -35,8 +200,12 @@ export function PdfEditor() {
   const [draftCrop, setDraftCrop] = useState<CropRect | null>(null);
   const [dragging, setDragging] = useState<{ x: number; y: number } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [detecting, setDetecting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState('');
   const [error, setError] = useState<string | null>(null);
+  /** Vista del resultado (INE grande) vs página original. */
+  const [showResult, setShowResult] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -63,6 +232,8 @@ export function PdfEditor() {
     setFileName('');
     sourceBytesRef.current = null;
     setError(null);
+    setShowResult(false);
+    setExportProgress('');
   }, []);
 
   const loadFile = async (file: File) => {
@@ -84,6 +255,7 @@ export function PdfEditor() {
       setPreviewZoom(1);
       setCropMode(false);
       setDraftCrop(null);
+      setShowResult(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo abrir el PDF.');
       resetDoc();
@@ -98,7 +270,7 @@ export function PdfEditor() {
     if (f) void loadFile(f);
   };
 
-  /** Renderiza la página actual al canvas de preview. */
+  /** Preview: original con overlay, o resultado compuesto. */
   useEffect(() => {
     if (!pdf || !canvasRef.current) return;
     const token = ++renderToken.current;
@@ -108,25 +280,35 @@ export function PdfEditor() {
       const page = await pdf.getPage(pageIndex + 1);
       if (cancelled || token !== renderToken.current) return;
 
-      const rot = edit.rotation;
-      const base = page.getViewport({ scale: 1, rotation: rot });
-      const maxW = Math.min(900, (wrapRef.current?.clientWidth ?? 800) - 24);
+      const maxW = Math.min(880, (wrapRef.current?.clientWidth ?? 800) - 24);
+      const base = page.getViewport({ scale: 1, rotation: edit.rotation });
       const fit = maxW / base.width;
-      const scale = fit * previewZoom;
-      const viewport = page.getViewport({ scale, rotation: rot });
+      const scale = Math.min(2.2, fit * previewZoom);
+
+      const source = await renderPageToCanvas(page, edit.rotation, scale);
+      if (cancelled || token !== renderToken.current) return;
 
       const canvas = canvasRef.current!;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      canvas.width = Math.floor(viewport.width);
-      canvas.height = Math.floor(viewport.height);
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      await page.render({ canvasContext: ctx, viewport, canvas }).promise;
-      if (cancelled || token !== renderToken.current) return;
+      if (showResult && (edit.crop || edit.fillPage)) {
+        const composed = composeOutputCanvas(source, { ...edit, fillPage: true });
+        // Encajar preview
+        const previewMax = maxW;
+        const s = Math.min(1, previewMax / composed.width);
+        canvas.width = Math.floor(composed.width * s);
+        canvas.height = Math.floor(composed.height * s);
+        ctx.fillStyle = '#e8ecf1';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(composed, 0, 0, canvas.width, canvas.height);
+        return;
+      }
 
-      // Overlay de recorte activo
+      canvas.width = source.width;
+      canvas.height = source.height;
+      ctx.drawImage(source, 0, 0);
+
       const crop = draftCrop ?? edit.crop;
       if (crop) {
         ctx.save();
@@ -137,6 +319,7 @@ export function PdfEditor() {
         const cw = crop.w * canvas.width;
         const ch = crop.h * canvas.height;
         ctx.clearRect(cx, cy, cw, ch);
+        ctx.drawImage(source, cx, cy, cw, ch, cx, cy, cw, ch);
         ctx.strokeStyle = '#c8102e';
         ctx.lineWidth = 2;
         ctx.strokeRect(cx, cy, cw, ch);
@@ -149,11 +332,11 @@ export function PdfEditor() {
     return () => {
       cancelled = true;
     };
-  }, [pdf, pageIndex, edit.rotation, edit.crop, draftCrop, previewZoom]);
+  }, [pdf, pageIndex, edit.rotation, edit.crop, edit.fillPage, draftCrop, previewZoom, showResult]);
 
   const canvasPoint = (e: React.PointerEvent): { x: number; y: number } | null => {
     const canvas = canvasRef.current;
-    if (!canvas) return null;
+    if (!canvas || showResult) return null;
     const r = canvas.getBoundingClientRect();
     return {
       x: clamp((e.clientX - r.left) / r.width, 0, 1),
@@ -162,7 +345,7 @@ export function PdfEditor() {
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
-    if (!cropMode) return;
+    if (!cropMode || showResult) return;
     const p = canvasPoint(e);
     if (!p) return;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -174,11 +357,12 @@ export function PdfEditor() {
     if (!cropMode || !dragging) return;
     const p = canvasPoint(e);
     if (!p) return;
-    const x = Math.min(dragging.x, p.x);
-    const y = Math.min(dragging.y, p.y);
-    const w = Math.abs(p.x - dragging.x);
-    const h = Math.abs(p.y - dragging.y);
-    setDraftCrop({ x, y, w, h });
+    setDraftCrop({
+      x: Math.min(dragging.x, p.x),
+      y: Math.min(dragging.y, p.y),
+      w: Math.abs(p.x - dragging.x),
+      h: Math.abs(p.y - dragging.y),
+    });
   };
 
   const onPointerUp = () => {
@@ -188,92 +372,109 @@ export function PdfEditor() {
     }
     setDragging(null);
     if (draftCrop.w > 0.02 && draftCrop.h > 0.02) {
-      setPageEdit(pageIndex, { crop: draftCrop });
+      setPageEdit(pageIndex, { crop: draftCrop, fillPage: true });
+      setShowResult(true);
+      setCropMode(false);
     }
     setDraftCrop(null);
   };
 
-  /** Renderiza una página editada a PNG (bytes) para armar el PDF de salida. */
-  const renderPageToPng = async (
-    doc: PDFDocumentProxy,
-    idx: number,
-    e: PageEdit,
-  ): Promise<{ bytes: Uint8Array; width: number; height: number }> => {
-    const page = await doc.getPage(idx + 1);
-    const exportScale = 2 * e.enlarge;
-    const viewport = page.getViewport({ scale: exportScale, rotation: e.rotation });
-
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.floor(viewport.width);
-    canvas.height = Math.floor(viewport.height);
-    const ctx = canvas.getContext('2d')!;
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    await page.render({ canvasContext: ctx, viewport, canvas }).promise;
-
-    let out = canvas;
-    if (e.crop && e.crop.w > 0.01 && e.crop.h > 0.01) {
-      const sx = Math.floor(e.crop.x * canvas.width);
-      const sy = Math.floor(e.crop.y * canvas.height);
-      const sw = Math.max(1, Math.floor(e.crop.w * canvas.width));
-      const sh = Math.max(1, Math.floor(e.crop.h * canvas.height));
-      const cropped = document.createElement('canvas');
-      // Ampliar el recorte para que ocupe más espacio en la hoja
-      const targetW = Math.min(1200, Math.max(sw, Math.round(sw * e.enlarge)));
-      const targetH = Math.round((sh / sw) * targetW);
-      cropped.width = targetW;
-      cropped.height = targetH;
-      const cctx = cropped.getContext('2d')!;
-      cctx.fillStyle = '#fff';
-      cctx.fillRect(0, 0, targetW, targetH);
-      cctx.imageSmoothingEnabled = true;
-      cctx.imageSmoothingQuality = 'high';
-      cctx.drawImage(canvas, sx, sy, sw, sh, 0, 0, targetW, targetH);
-      out = cropped;
+  /** Detecta la INE y la agranda en la hoja (sin llamar a OpenAI: análisis de imagen). */
+  const amplifyIne = async () => {
+    if (!pdf) return;
+    setDetecting(true);
+    setError(null);
+    setCropMode(false);
+    try {
+      const page = await pdf.getPage(pageIndex + 1);
+      await yieldUi();
+      const source = await renderPageToCanvas(page, edit.rotation, DETECT_SCALE);
+      await yieldUi();
+      const crop = detectContentCrop(source);
+      if (!crop) {
+        setError(
+          'No pude detectar la INE automáticamente. Usa «Recortar» y marca la tarjeta a mano.',
+        );
+        return;
+      }
+      setPageEdit(pageIndex, { crop, fillPage: true });
+      setShowResult(true);
+      setPreviewZoom(1);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al ampliar la INE');
+    } finally {
+      setDetecting(false);
     }
-
-    const blob: Blob = await new Promise((resolve, reject) => {
-      out.toBlob((b) => (b ? resolve(b) : reject(new Error('No se pudo generar PNG'))), 'image/png');
-    });
-    const bytes = new Uint8Array(await blob.arrayBuffer());
-    return { bytes, width: out.width, height: out.height };
   };
 
   const downloadEdited = async () => {
-    if (!pdf || !sourceBytesRef.current) return;
+    if (!pdf) return;
     setExporting(true);
     setError(null);
+    setExportProgress('Preparando…');
     try {
-      // Reabrir con pdfjs desde bytes originales (el proxy ya está cargado)
       const outPdf = await PDFDocument.create();
 
       for (let i = 0; i < pageCount; i++) {
+        setExportProgress(`Página ${i + 1} de ${pageCount}…`);
+        await yieldUi();
+
         const e = edits[i] ?? DEFAULT_EDIT;
-        const { bytes, width, height } = await renderPageToPng(pdf, i, e);
-        const png = await outPdf.embedPng(bytes);
-        // Página del tamaño de la imagen (INE ampliada = hoja más grande o imagen grande)
-        const page = outPdf.addPage([width * 0.75, height * 0.75]);
-        page.drawImage(png, {
-          x: 0,
-          y: 0,
-          width: page.getWidth(),
-          height: page.getHeight(),
+        const page = await pdf.getPage(i + 1);
+        // Escala moderada fija — el tamaño final lo define composeOutputCanvas
+        const source = await renderPageToCanvas(page, e.rotation, 1.5);
+        await yieldUi();
+
+        const composed = composeOutputCanvas(source, {
+          ...e,
+          // Si hay crop, siempre llenar hoja al exportar
+          fillPage: e.fillPage || Boolean(e.crop),
         });
+        await yieldUi();
+
+        const bytes = await canvasToJpegBytes(composed, 0.88);
+        const jpg = await outPdf.embedJpg(bytes);
+
+        if (e.fillPage || e.crop) {
+          const pdfPage = outPdf.addPage([LETTER_W, LETTER_H]);
+          pdfPage.drawImage(jpg, {
+            x: 0,
+            y: 0,
+            width: LETTER_W,
+            height: LETTER_H,
+          });
+        } else {
+          const scale = Math.min(LETTER_W / composed.width, LETTER_H / composed.height);
+          const w = composed.width * scale;
+          const h = composed.height * scale;
+          const pdfPage = outPdf.addPage([LETTER_W, LETTER_H]);
+          pdfPage.drawImage(jpg, {
+            x: (LETTER_W - w) / 2,
+            y: (LETTER_H - h) / 2,
+            width: w,
+            height: h,
+          });
+        }
       }
 
+      setExportProgress('Guardando archivo…');
+      await yieldUi();
       const pdfBytes = await outPdf.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       const base = fileName.replace(/\.pdf$/i, '') || 'documento';
       a.href = url;
-      a.download = `${base}-editado.pdf`;
+      a.download = `${base}-ampliado.pdf`;
+      document.body.appendChild(a);
       a.click();
+      a.remove();
       URL.revokeObjectURL(url);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al exportar PDF');
     } finally {
       setExporting(false);
+      setExportProgress('');
     }
   };
 
@@ -283,7 +484,8 @@ export function PdfEditor() {
         <div>
           <h1>Editor de PDF</h1>
           <p className="pdf-editor-sub">
-            Sube un PDF (p. ej. INE escaneada), amplía, recorta o rota y descarga el resultado.
+            Detecta la INE en el escaneo, la agranda en la hoja y descarga el PDF. El zoom solo
+            acerca la vista; usa <strong>Ampliar INE</strong> para el documento.
           </p>
         </div>
         <div className="pdf-editor-header-actions">
@@ -292,14 +494,14 @@ export function PdfEditor() {
               type="button"
               className="btn-primary"
               data-tour="pdf-download"
-              disabled={exporting}
+              disabled={exporting || detecting}
               onClick={() => void downloadEdited()}
             >
-              {exporting ? 'Generando…' : 'Descargar PDF'}
+              {exporting ? exportProgress || 'Generando…' : 'Descargar PDF'}
             </button>
           )}
           {pdf && (
-            <button type="button" className="pdf-btn-ghost" onClick={resetDoc}>
+            <button type="button" className="pdf-btn-ghost" onClick={resetDoc} disabled={exporting}>
               Nuevo archivo
             </button>
           )}
@@ -336,7 +538,7 @@ export function PdfEditor() {
                 📄
               </span>
               <strong>Arrastra un PDF aquí o haz clic para subir</strong>
-              <span>Ideal para INE escaneadas: ampliar, recortar y descargar</span>
+              <span>Ej.: INE escaneada → Ampliar INE → Descargar</span>
             </>
           )}
           <input
@@ -359,13 +561,45 @@ export function PdfEditor() {
             <p className="pdf-toolbar-file" title={fileName}>
               {fileName}
             </p>
+
+            <button
+              type="button"
+              className="pdf-tool-btn pdf-tool-btn--primary"
+              data-tour="pdf-enlarge"
+              disabled={detecting || exporting}
+              onClick={() => void amplifyIne()}
+            >
+              {detecting ? 'Detectando INE…' : 'Ampliar INE en la hoja'}
+            </button>
+
+            <div className="pdf-view-toggle" role="group" aria-label="Vista">
+              <button
+                type="button"
+                className={!showResult ? 'pdf-tool-btn--on' : ''}
+                onClick={() => setShowResult(false)}
+              >
+                Original
+              </button>
+              <button
+                type="button"
+                className={showResult ? 'pdf-tool-btn--on' : ''}
+                disabled={!edit.crop && !edit.fillPage}
+                onClick={() => setShowResult(true)}
+              >
+                Resultado
+              </button>
+            </div>
+
             <label className="pdf-field">
               Página
               <div className="pdf-page-nav">
                 <button
                   type="button"
                   disabled={pageIndex <= 0}
-                  onClick={() => setPageIndex((i) => i - 1)}
+                  onClick={() => {
+                    setPageIndex((i) => i - 1);
+                    setShowResult(false);
+                  }}
                 >
                   ‹
                 </button>
@@ -375,7 +609,10 @@ export function PdfEditor() {
                 <button
                   type="button"
                   disabled={pageIndex >= pageCount - 1}
-                  onClick={() => setPageIndex((i) => i + 1)}
+                  onClick={() => {
+                    setPageIndex((i) => i + 1);
+                    setShowResult(false);
+                  }}
                 >
                   ›
                 </button>
@@ -383,7 +620,7 @@ export function PdfEditor() {
             </label>
 
             <label className="pdf-field">
-              Zoom vista
+              Zoom vista (solo pantalla)
               <input
                 type="range"
                 min={0.5}
@@ -395,19 +632,6 @@ export function PdfEditor() {
               <span className="pdf-field-val">{previewZoom.toFixed(1)}×</span>
             </label>
 
-            <label className="pdf-field" data-tour="pdf-enlarge">
-              Ampliar al exportar
-              <input
-                type="range"
-                min={1}
-                max={3}
-                step={0.1}
-                value={edit.enlarge}
-                onChange={(e) => setPageEdit(pageIndex, { enlarge: parseFloat(e.target.value) })}
-              />
-              <span className="pdf-field-val">{edit.enlarge.toFixed(1)}×</span>
-            </label>
-
             <div className="pdf-btn-row">
               <button
                 type="button"
@@ -416,6 +640,8 @@ export function PdfEditor() {
                 onClick={() =>
                   setPageEdit(pageIndex, {
                     rotation: ((edit.rotation + 90) % 360) as PageEdit['rotation'],
+                    crop: null,
+                    fillPage: false,
                   })
                 }
               >
@@ -425,12 +651,14 @@ export function PdfEditor() {
                 type="button"
                 className={`pdf-tool-btn ${cropMode ? 'pdf-tool-btn--on' : ''}`}
                 data-tour="pdf-crop"
+                disabled={showResult}
                 onClick={() => {
+                  setShowResult(false);
                   setCropMode((v) => !v);
                   setDraftCrop(null);
                 }}
               >
-                {cropMode ? 'Recortando…' : 'Recortar'}
+                {cropMode ? 'Recortando…' : 'Recortar a mano'}
               </button>
             </div>
 
@@ -439,7 +667,8 @@ export function PdfEditor() {
                 type="button"
                 className="pdf-btn-ghost"
                 onClick={() => {
-                  setPageEdit(pageIndex, { crop: null });
+                  setPageEdit(pageIndex, { crop: null, fillPage: false });
+                  setShowResult(false);
                   setDraftCrop(null);
                 }}
               >
@@ -448,16 +677,24 @@ export function PdfEditor() {
             )}
 
             <p className="pdf-hint">
-              {cropMode
-                ? 'Arrastra sobre la imagen para marcar la zona (p. ej. la INE). Luego ajusta «Ampliar» y descarga.'
-                : 'Usa Recortar para enfocar la INE, Ampliar para hacerla más grande al descargar.'}
+              {showResult
+                ? 'Así quedará la INE en el PDF descargado (centrada y grande en hoja carta).'
+                : cropMode
+                  ? 'Arrastra sobre la tarjeta. Al soltar se agranda en la hoja.'
+                  : 'Pulsa «Ampliar INE en la hoja»: detecta la tarjeta sola y la agranda. Luego descarga.'}
             </p>
           </aside>
 
           <div className="pdf-canvas-wrap" ref={wrapRef} data-tour="pdf-preview">
+            {exporting && (
+              <div className="pdf-export-overlay">
+                <div className="spinner" />
+                <p>{exportProgress || 'Generando PDF…'}</p>
+              </div>
+            )}
             <canvas
               ref={canvasRef}
-              className={`pdf-canvas ${cropMode ? 'pdf-canvas--crop' : ''}`}
+              className={`pdf-canvas ${cropMode && !showResult ? 'pdf-canvas--crop' : ''}`}
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
