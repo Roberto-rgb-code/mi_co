@@ -127,6 +127,20 @@
   accent-color: var(--primary);
 }
 
+.pdf-select {
+  width: 100%;
+  margin-top: 0.15rem;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .pdf-field-val {
   font-size: 0.85rem;
   font-weight: 700;

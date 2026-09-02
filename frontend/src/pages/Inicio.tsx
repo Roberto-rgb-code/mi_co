@@ -35,7 +35,7 @@ export function Inicio() {
         <Link to="/pdf" className="action-card">
           <span className="action-icon">📄</span>
           <h3>Editor PDF</h3>
-          <p>Amplía INE u otros documentos y descarga el PDF editado</p>
+          <p>INE a escala real 1:1 para imprimir del mismo tamaño físico</p>
         </Link>
       </div>
     </div>
